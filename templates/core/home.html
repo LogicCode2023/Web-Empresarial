@@ -1,0 +1,136 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block content %}
+<!-- Sección Hero -->
+<section class="hero-section">
+    <div class="hero-content">
+        <h1>El mayor representante de fabricas globales en Latinoamérica</h1>
+        <p>Te vinculamos con proveedores verificados y garantizamos todo el proceso de importación hasta tu empresa en Ecuador y toda Latam.</p>
+    </div>
+
+    <!-- Tarjeta Única de Beneficios (Se adapta automáticamente por CSS) -->
+    <div class="benefits-card">
+        <div class="benefit-item">
+            <img src="{% static 'core/icons/fabrica.png' %}" alt="Icono" class="benefit-icon">
+            <h3>Sin Intermediarios</h3>
+            <p>Catalogo disponible con el fabricante directo</p>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="benefit-item">
+            <img src="{% static 'core/icons/comunicacion.png' %}" alt="Icono" class="benefit-icon">
+            <h3>Comunicación Efectiva</h3>
+            <p>Respuesta rápida y sin barreras de idioma</p>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="benefit-item">
+            <img src="{% static 'core/icons/flash.png' %}" alt="Icono" class="benefit-icon">
+            <h3>Cotización Flash</h3>
+            <p>Calculamos tus costos de importación al instante</p>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="benefit-item">
+            <img src="{% static 'core/icons/container.png' %}" alt="Icono" class="benefit-icon">
+            <h3>Consolidación de Carga</h3>
+            <p>Optimiza tus costos compartiendo espacio de carga</p>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="benefit-item">
+            <img src="{% static 'core/icons/compa.png' %}" alt="Icono" class="benefit-icon">
+            <h3>Acompañamiento</h3>
+            <p>Te guiamos desde la fabrica hasta tu puerta</p>
+        </div>
+    </div>
+</section>
+
+<!-- Sección 1: ¿Cómo funciona? -->
+<section class="how-it-works">
+    <h2>¿Cómo funciona?</h2>
+
+    <div class="steps-container">
+        <div class="step-item">
+            <div class="step-badge">1</div>
+            <p>Ingresa la palabra clave del producto que buscas</p>
+            <div class="step-illustration">
+                <img src="{% static 'core/img/pasouno.png' %}" alt="Formulario"/>
+            </div>
+        </div>
+
+        <div class="step-item">
+            <div class="step-badge">2</div>
+            <p>Llena nuestro formulario en solo tres minutos</p>
+            <div class="step-illustration">
+                <img src="{% static 'core/img/form.png' %}" alt="Formulario"/>
+            </div>
+        </div>
+
+        <div class="step-item">
+            <div class="step-badge">3</div>
+            <p>Recibe nuestra rápida respuesta</p>
+            <div class="step-illustration">
+                <img src="{% static 'core/img/support.png' %}" alt="Atención al cliente"/>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Sección 2: ¿Qué quieres importar? -->
+<section class="import-section">
+    <span class="sub-heading">Empecemos!!</span>
+    <h2 class="main-title">¿Que quieres importar?</h2>
+
+    <!-- Buscador Principal que dirige a formulario dinámico -->
+    <form action="{% url 'crear_tramite' 'busqueda' %}" method="GET" class="main-search-box">
+        <span class="icon">&#9776;</span>
+        <input type="text" name="producto" id="mainSearch" placeholder="Ej: taladros, repuestos, ropa..." required />
+        <button type="submit" style="background: none; border: none; cursor: pointer; padding: 0;">
+            <span class="icon-search">&#128065;</span>
+        </button>
+    </form>
+
+    <!-- Botones de Categorías -->
+    <div class="categories-grid">
+        <button class="cat-pill" onclick="selectCat('Autopartes')">Autopartes
+            <img src="{% static 'core/icons/repuestos.png' %}" alt="Autopartes" class="hover-icon">
+        </button>
+        <button class="cat-pill" onclick="selectCat('Textiles')">Textiles
+            <img src="{% static 'core/icons/telas.png' %}" alt="Textiles" class="hover-icon">
+        </button>
+        <button class="cat-pill" onclick="selectCat('Tecnología y Electrónica')">Tecnología y Electrónica
+            <img src="{% static 'core/icons/tecnologia.png' %}" alt="Tecnologia" class="hover-icon">
+        </button>
+        <button class="cat-pill" onclick="selectCat('Alimentos y Bebidas')">Alimentos y Bebidas
+            <img src="{% static 'core/icons/alimentos.png' %}" alt="Alimentos" class="hover-icon">
+        </button>
+        <button class="cat-pill" onclick="selectCat('Insumos Agrícolas y Alimentos Balanceados')">Insumos Agrícolas y Balanceados
+            <img src="{% static 'core/icons/agricola.png' %}" alt="Agricolas" class="hover-icon">
+        </button>
+        <button class="cat-pill" onclick="selectCat('Medicamentos y Cosmeceútica')">Medicamentos y Salud
+            <img src="{% static 'core/icons/medicina.png' %}" alt="Medicina" class="hover-icon">
+        </button>
+        <button class="cat-pill" onclick="selectCat('Plásticos y sus manufacturas')">Plásticos y Manufacturas
+            <img src="{% static 'core/icons/plasticos.png' %}" alt="Plasticos" class="hover-icon">
+        </button>
+        <button class="cat-pill" onclick="selectCat('Hierro, acero y construcción')">Hierro, Acero y Construcción
+            <img src="{% static 'core/icons/hierro.png' %}" alt="Metales" class="hover-icon">
+        </button>
+        <button class="cat-pill" onclick="selectCat('Maquinaria Industrial y equipos')">Maquinaria e Industria
+            <img src="{% static 'core/icons/maquinaria.png' %}" alt="Maquinaria" class="hover-icon">
+        </button>
+    </div>
+</section>
+
+<script>
+function selectCat(categoryName) {
+    window.location.href = "{% url 'crear_tramite' 'busqueda' %}?producto=" + encodeURIComponent(categoryName);
+}
+</script>
+{% endblock %}

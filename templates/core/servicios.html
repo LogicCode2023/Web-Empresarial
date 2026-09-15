@@ -1,0 +1,127 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block content %}
+<style>
+  /* Oculta de forma preventiva cualquier botón superior derecho global si lo tuviera la cabecera en esta vista */
+  header .btn-cotiza,
+  header .btn-cotizar {
+    display: none !important;
+  }
+</style>
+
+<section class="services-hero-section" >
+  <div class="services-header">
+    <h1 class="services-title">SERVICIOS</h1>
+    <!-- Botón "Cotizar Servicio" eliminado de aquí para evitar la redundancia -->
+  </div>
+
+  <div class="services-grid">
+
+    <!-- Tarjeta 1: Búsqueda de Proveedores -->
+    <div class="service-card">
+      <div class="service-img-wrapper">
+        <img src="{% static 'core/img/proveedores.jpg' %}" alt="Búsqueda de proveedores">
+      </div>
+      <div class="service-content">
+        <h3>Búsqueda de proveedores directos</h3>
+        <p class="service-description">
+          Te conectamos con fabricantes directos y verificados en China para asegurar calidad, precio y confianza en tu
+          mercancía.
+        </p>
+
+        <a href="{% url 'solicitud_busqueda' %}?producto=Proveedores" class="service-link">
+          Más Información <span class="plus-icon">+</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- Tarjeta 2: Asesoría de Compras -->
+    <div class="service-card">
+      <div class="service-img-wrapper">
+        <img src="{% static 'core/img/asesoria.jpg' %}" alt="Asesoría de Compras">
+      </div>
+      <div class="service-content">
+        <h3>Asesoría de Compras</h3>
+        <p class="service-description">
+          Te acompañamos en la negociación y validación de pagos internacionales para que compres de forma segura y sin
+          riesgos.
+        </p>
+        <a href="{% url 'solicitud_asesoria' %}" class="service-link">
+          Más Información <span class="plus-icon">+</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- Tarjeta 3: Servicios de Importación (Desplegable Interactivo) -->
+    <div class="service-card">
+      <div class="service-img-wrapper">
+        <img src="{% static 'core/img/importacion.jpg' %}" alt="Servicios de Importación">
+      </div>
+      <div class="service-content">
+        <h3>Servicios de Importación por Etapas</h3>
+        <p class="service-description">
+          Controlamos cada fase del proceso logístico, desde la salida en fábrica hasta la entrega final en tu almacén o
+          bodega.
+        </p>
+
+
+        <!-- Lista oculta inicialmente -->
+        <div class="import-options" id="import-options-menu">
+          <a href="{% url 'cotizar_logistica' %}" class="sub-service-btn">
+            🚢 Logística Internacional (Fletes/Seguros)
+          </a>
+          <a href="{% url 'cotizar_nacionalizacion' %}" class="sub-service-btn">
+            📄 Nacionalización y Aduanas (Permisos)
+          </a>
+          <a href="{% url 'cotizar_inspeccion' %}" class="sub-service-btn">
+            🔍 Inspección y Gestión en Origen (China)
+          </a>
+          <a href="{% url 'cotizar_transporte_local' %}" class="sub-service-btn">
+            🚚 Transporte Local y Entrega
+          </a>
+        </div>
+
+        <!-- Botón detonador del menú -->
+        <button type="button" class="service-link toggle-btn" onclick="toggleImportOptions(this)" style="margin-top: auto;">
+          Más Información <span class="plus-icon">+</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Tarjeta 4: Representación en China -->
+    <div class="service-card">
+      <div class="service-img-wrapper">
+        <img src="{% static 'core/img/representacion.jpg' %}" alt="Representación en China">
+      </div>
+      <div class="service-content">
+        <h3>Representación en China</h3>
+        <p class="service-description">
+          ¿Quieres ser distribuidor autorizado de una marca? Te conectamos directo con el fabricante en China y te
+          asesoramos en toda la negociación.
+        </p>
+        <a href="{% url 'solicitud_representacion' %}" class="service-link">
+          Más Información <span class="plus-icon">+</span>
+        </a>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- Script para el toggle de la Tarjeta 3 -->
+<script>
+  function toggleImportOptions(btn) {
+    const optionsMenu = document.getElementById('import-options-menu');
+    optionsMenu.classList.toggle('active');
+
+    // Cambiar el ícono + por -
+    const icon = btn.querySelector('.plus-icon');
+    if (optionsMenu.classList.contains('active')) {
+      icon.textContent = '-';
+    } else {
+      icon.textContent = '+';
+    }
+  }
+</script>
+{% endblock %}

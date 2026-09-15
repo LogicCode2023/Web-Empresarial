@@ -1,0 +1,1403 @@
+/* ==========================================
+   01. RESET BÁSICO Y ESTILOS GENERALES
+   ========================================== */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+  background-color: #ffffff;
+  color: #1a1a1a;
+}
+
+/* ==========================================
+   02. NAVBAR Y HEADER PRINCIPAL
+   ========================================== */
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 5%;
+  width: 100%;
+  background-color: #ffffff;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+}
+
+.navbar .logo img,
+.logo img {
+  height: 90px !important;
+  width: auto !important;
+  object-fit: contain;
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 30px;
+  list-style: none;
+}
+
+.nav-links a {
+  text-decoration: none;
+  color: #0d233a;
+  font-weight: 600;
+  font-size: 1rem;
+  transition: color 0.3s ease;
+}
+
+.nav-links a:hover,
+.nav-links a.active {
+  color: #e06d3b;
+}
+
+.navbar-btn-container {
+  display: flex;
+  align-items: center;
+}
+
+.btn-cotiza {
+  background-color: #d87342;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 12px;
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 1rem;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: background-color 0.2s ease;
+}
+
+.btn-cotiza:hover {
+  background-color: #c25e2e;
+}
+
+/* ==========================================
+   03. HEADER MINIMALISTA (solicitud.html)
+   ========================================== */
+.minimal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 5%;
+  background-color: #ffffff;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.minimal-logo img {
+  height: 90px;
+  width: auto;
+  object-fit: contain;
+}
+
+.btn-cancel {
+  color: #64748b;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.95rem;
+  transition: color 0.2s ease;
+}
+
+.btn-cancel:hover {
+  color: #d87342;
+}
+
+/* ==========================================
+   04. SECCIÓN HERO Y BENEFICIOS
+   ========================================== */
+.hero-section {
+  position: relative;
+  background: linear-gradient(rgba(202, 107, 62, 0.82), rgba(202, 107, 62, 0.82)),
+              url('../img/puerto.jpg') center/cover no-repeat;
+  max-width: 1240px;
+  width: 90%;
+  margin: 20px auto 0 auto;
+  border-radius: 24px;
+  padding: 130px 5% 0 5%;
+  text-align: center;
+  overflow: visible !important;
+  min-height: 480px;
+
+}
+
+
+.hero-header-btn {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 20px;
+}
+
+.btn-servicios {
+  background-color: #1e2238;
+  color: #d87342;
+  border: none;
+  padding: 10px 22px;
+  border-radius: 20px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.hero-content {
+    width: 100%;
+    max-width: 900px;
+    margin: 40px auto 0 auto;
+}
+
+.hero-content h1 {
+  color: #08214d;
+  font-size: 2.3rem;
+  font-weight: 800;
+  margin: 0 0 15px 0;
+  line-height: 1.2;
+  max-width: 800px;
+}
+
+.hero-content p {
+  color: #ffffff;
+  font-size: 1rem;
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+/* Tarjeta Única de Beneficios (Diseño Base PC) */
+.benefits-card {
+  background-color: #032b78;
+  border-radius: 24px;
+  padding: 25px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 1100px;
+  width: 90%;
+  margin: 0 auto;
+  position: relative;
+  transform: translateY(50%);
+  z-index: 10;
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+}
+
+.benefit-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 0 10px;
+}
+
+.benefit-icon {
+  width: 48px;
+  height: 48px;
+  margin-bottom: 12px;
+  object-fit: contain;
+}
+
+.benefit-item h3 {
+  color: #ffffff;
+  font-size: 0.95rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.benefit-item p {
+  color: #ffffff;
+  font-size: 0.75rem;
+  line-height: 1.2;
+  opacity: 0.9;
+  margin: 0;
+}
+
+.divider {
+  width: 1px;
+  height: 60px;
+  background-color: rgba(255, 255, 255, 0.3);
+}
+
+/* ==========================================
+   05. SECCIÓN CÓMO FUNCIONA
+   ========================================== */
+.how-it-works {
+  padding-top: 140px;
+  padding-bottom: 60px;
+  text-align: center;
+  background-color: #ffffff;
+}
+
+.how-it-works h2 {
+  color: #0b2240;
+  font-size: 2.3rem;
+  font-weight: 800;
+  margin-bottom: 45px;
+}
+
+.steps-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 20px;
+  gap: 20px;
+}
+
+.step-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.step-badge {
+  width: 75px;
+  height: 75px;
+  border: 4px solid #d87342;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #d87342;
+  font-size: 2.6rem;
+  font-weight: 800;
+  margin-bottom: 20px;
+  background-color: #ffffff;
+}
+
+.step-item p {
+  color: #2c3e50;
+  font-size: 1.05rem;
+  font-weight: 600;
+  line-height: 1.35;
+  max-width: 240px;
+  margin-bottom: 25px;
+}
+
+.step-illustration img {
+  max-width: 150px;
+  height: auto;
+}
+
+.step-item:first-child .step-illustration img {
+  max-width: 380px;
+}
+
+.mini-search-box {
+  display: flex;
+  align-items: center;
+  background-color: #5ec0f8;
+  border-radius: 10px;
+  padding: 8px 12px;
+  width: 100%;
+  max-width: 230px;
+  color: #ffffff;
+}
+
+.mini-search-box input {
+  border: none;
+  background: transparent;
+  width: 100%;
+  padding: 0 8px;
+  color: #ffffff;
+  font-size: 0.85rem;
+  outline: none;
+}
+
+.mini-search-box input::placeholder {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+/* ==========================================
+   06. BUSCADOR Y CATEGORÍAS
+   ========================================== */
+.import-section {
+  padding: 40px 20px 80px 20px;
+  text-align: center;
+  background-color: #ffffff;
+}
+
+.sub-heading {
+  font-family: 'Comic Sans MS', 'Segoe Print', cursive, sans-serif;
+  color: #1e4b8a;
+  font-size: 2rem;
+  display: block;
+  margin-bottom: 10px;
+}
+
+.main-title {
+  color: #0b2240;
+  font-size: 2.5rem;
+  font-weight: 800;
+  margin-bottom: 30px;
+}
+
+.main-search-box {
+  display: flex;
+  align-items: center;
+  background-color: #f19362;
+  border-radius: 15px;
+  padding: 12px 20px;
+  max-width: 480px;
+  margin: 0 auto 50px auto;
+  box-shadow: 0 4px 15px rgba(216, 115, 66, 0.2);
+}
+
+.main-search-box input {
+  border: none;
+  background: transparent;
+  width: 100%;
+  padding: 0 12px;
+  color: #ffffff;
+  font-size: 1rem;
+  outline: none;
+}
+
+.main-search-box input::placeholder {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.icon, .icon-search {
+  color: #ffffff;
+  font-size: 1.1rem;
+}
+
+.categories-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  row-gap: 100px;
+  column-gap: 25px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.cat-pill {
+  position: relative;
+  background: #ffffff;
+  color: #0b2240;
+  border: 2px solid #3b82f6;
+  border-radius: 50px;
+  padding: 16px 20px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  min-height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  box-shadow: 0 4px 12px rgba(11, 34, 64, 0.05);
+  transition: all 0.25s ease-in-out;
+  z-index: 1;
+}
+
+.cat-pill:hover {
+  background-color: #0b2240;
+  color: #ffffff;
+  border-color: #0b2240;
+  transform: translateY(-3px);
+  box-shadow: 0 8px 18px rgba(11, 34, 64, 0.18);
+  z-index: 20;
+}
+
+.cat-pill:active {
+  transform: translateY(0);
+}
+
+.hover-icon {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-top: 10px;
+  width: 85px;
+  height: auto;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease, visibility 0.3s ease, transform 0.3s ease;
+  pointer-events: none;
+  filter: brightness(0) saturate(100%) invert(11%) sepia(29%) saturate(1450%) hue-rotate(185deg) brightness(95%) contrast(97%);
+}
+
+.cat-pill:hover .hover-icon {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(2px);
+}
+
+.cat-pill:has(img[src*="textil"]) .hover-icon,
+.cat-pill img[src*="textiles"] {
+  transform: translateX(-50%) scale(2.2) !important;
+}
+
+.cat-pill:hover:has(img[src*="textil"]) .hover-icon,
+.cat-pill:hover img[src*="textiles"] {
+  transform: translateX(-50%) translateY(2px) scale(2.2) !important;
+}
+
+/* ==========================================
+   07. FORMULARIO MULTIPASO
+   ========================================== */
+.form-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 50px 20px;
+  background-color: #f8fafc;
+  min-height: 80vh;
+}
+
+.form-card {
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 40px;
+  width: 100%;
+  max-width: 600px;
+  box-shadow: 0 10px 25px rgba(11, 34, 64, 0.08);
+  border: 1px solid #e2e8f0;
+}
+
+.form-title {
+  color: #0b2240;
+  font-size: 1.8rem;
+  font-weight: 800;
+  margin-bottom: 8px;
+  text-align: center;
+}
+
+.form-subtitle {
+  color: #64748b;
+  font-size: 0.95rem;
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.step-indicator {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #d87342;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 20px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #f1f5f9;
+}
+
+.hidden-step {
+  display: none;
+}
+
+.active-step {
+  display: block;
+}
+
+.input-group {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 20px;
+  text-align: left;
+}
+
+.input-group label {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #0b2240;
+  margin-bottom: 8px;
+}
+
+.input-group input,
+.input-group select,
+.input-group textarea {
+  padding: 12px 16px;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.input-group input:focus,
+.input-group select:focus,
+.input-group textarea:focus {
+  border-color: #0b2240;
+}
+
+.help-text {
+  font-size: 0.78rem;
+  color: #94a3b8;
+  margin-top: 5px;
+}
+
+.btn-primary {
+  width: 100%;
+  background-color: #d87342;
+  color: #ffffff;
+  border: none;
+  border-radius: 12px;
+  padding: 14px;
+  font-weight: 700;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.btn-primary:hover {
+  background-color: #c25e2e;
+}
+
+.button-group {
+  display: flex;
+  gap: 15px;
+}
+
+.btn-secondary {
+  background-color: #e2e8f0;
+  color: #0b2240;
+  border: none;
+  border-radius: 12px;
+  padding: 14px 20px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.btn-secondary:hover {
+  background-color: #cbd5e1;
+}
+
+/* ==========================================
+   08. PÁGINA NOSOTROS
+   ========================================== */
+.about-hero {
+  background-color: #0b2240;
+  color: #ffffff;
+  padding: 60px 20px;
+  text-align: center;
+}
+
+.about-hero h1 {
+  font-size: 2.5rem;
+  font-weight: 800;
+  margin-bottom: 12px;
+}
+
+.about-hero p {
+  font-size: 1.1rem;
+  color: #cbd5e1;
+  max-width: 650px;
+  margin: 0 auto;
+}
+
+.about-container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 60px 20px;
+}
+
+.mv-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 30px;
+  margin-bottom: 70px;
+}
+
+.mv-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 35px;
+  box-shadow: 0 4px 15px rgba(11, 34, 64, 0.05);
+}
+
+.mv-icon {
+  font-size: 2.2rem;
+  margin-bottom: 15px;
+}
+
+.mv-card h2 {
+  color: #0b2240;
+  font-size: 1.6rem;
+  margin-bottom: 15px;
+  font-weight: 700;
+}
+
+.mv-card p {
+  color: #475569;
+  line-height: 1.6;
+  font-size: 0.98rem;
+}
+
+.values-section h2 {
+  text-align: center;
+  color: #0b2240;
+  font-size: 2.1rem;
+  font-weight: 800;
+  margin-bottom: 45px;
+}
+
+.values-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 25px;
+}
+
+.value-item {
+  background: #f8fafc;
+  border-radius: 12px;
+  padding: 25px;
+  border-left: 4px solid #d87342;
+}
+
+.value-number {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #d87342;
+  margin-bottom: 10px;
+}
+
+.value-item h3 {
+  color: #0b2240;
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+.value-item p {
+  color: #64748b;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+/* ==========================================
+   09. BOTÓN FLOTANTE DE WHATSAPP
+   ========================================== */
+.whatsapp-float {
+  position: fixed;
+  top: 50%;
+  bottom: 15px;
+  transform: translateY(-50%);
+  width: 50px;
+  height: 50px;
+  background-color: #25d366;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  z-index: 9999;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.whatsapp-float:hover {
+  transform: translateY(-50%) scale(1.1);
+  box-shadow: 0 6px 18px rgba(37, 211, 102, 0.4);
+}
+
+.whatsapp-icon {
+  width: 30px;
+  height: 30px;
+}
+
+/* ==========================================
+   10. SECCIÓN PRINCIPAL DE SERVICIOS
+   ========================================== */
+.services-hero-section {
+  background-color: #0d2346;
+  color: #ffffff;
+  padding: 60px 8%;
+  min-height: 80vh;
+}
+
+.services-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 40px;
+}
+
+.services-title {
+  font-size: 3rem;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+
+.btn-ver-todos {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #ffffff;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.arrow-box {
+  background-color: #ff7a3d;
+  color: #fff;
+  padding: 8px 14px;
+  border-radius: 4px;
+  transition: background-color 0.3s ease;
+}
+
+.btn-ver-todos:hover .arrow-box {
+  background-color: #e06328;
+}
+
+.services-grid {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 30px;
+  align-items: stretch;
+}
+
+.service-card {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  background-color: transparent;
+  border: none;
+  padding: 0px;
+  min-width: 250px;
+}
+
+.service-img-wrapper {
+  width: 100%;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.service-img-wrapper img {
+  width: 100%;
+  height: auto;
+  display: block;
+  object-fit: contain;
+  transition: transform 0.3s ease;
+}
+
+.service-card:hover .service-img-wrapper img {
+  transform: scale(1.05);
+}
+
+.service-content {
+    display:flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+.service-tag {
+  font-size: 0.75rem;
+  letter-spacing: 1.5px;
+  color: #a0aec0;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.service-card h3 {
+  min-height: 3.2em;
+  display: flex;
+  align-items: center;
+}
+
+.service-description {
+    color: #a0aec0;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    margin-bottom: 15px;
+}
+
+.service-card p,
+.service-desc {
+    color: #a0aec0;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    margin-bottom: 15px;
+}
+
+.service-link,
+.toggle-btn {
+  color: #ffffff;
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: auto;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  text-align: left;
+}
+
+.plus-icon {
+  color: #ff7a3d;
+  font-weight: bold;
+}
+
+.service-link:hover,
+.toggle-btn:hover {
+  color: #ff7a3d;
+}
+
+/* ==========================================
+   11. FOOTER Y SUB-FOOTER
+   ========================================== */
+.main-footer {
+  background-color: #0d2346;
+  color: #ffffff;
+  padding-top: 50px;
+  margin-top: 60px;
+  font-family: inherit;
+}
+
+.footer-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px 40px 20px;
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1.5fr;
+  gap: 40px;
+}
+
+.footer-col h4 {
+  font-size: 1.1rem;
+  margin-bottom: 20px;
+  color: #ff7a3d;
+  font-weight: 700;
+}
+
+.footer-col p,
+.footer-col li a {
+  color: #d0d7de;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.footer-col ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.footer-col ul li {
+  margin-bottom: 10px;
+}
+
+.footer-col ul li a:hover {
+  color: #ffffff;
+}
+
+.footer-logo img {
+  height: 45px;
+  width: auto;
+  margin-bottom: 15px;
+}
+
+.brand-desc {
+  margin-bottom: 20px;
+  max-width: 280px;
+}
+
+.social-links {
+  display: flex;
+  gap: 12px;
+}
+
+.social-links a {
+  width: 38px;
+  height: 38px;
+  background-color: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.social-links a:hover {
+  background-color: #ff7a3d;
+  transform: translateY(-3px);
+}
+
+.contact-col p {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.contact-col i {
+  color: #ff7a3d;
+}
+
+.footer-bottom {
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  text-align: center;
+  padding: 20px;
+  font-size: 0.85rem;
+  color: #8b949e;
+}
+
+/* ==========================================
+   12. ADAPTACIÓN RESPONSIVE Y CONTROL MÓVIL
+   ========================================== */
+@media (max-width: 992px) {
+  .hero-section {
+    overflow: visible !important;
+    padding-bottom: 20px !important;
+    margin-bottom: 20px !important;
+  }
+
+  .benefits-card {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    transform: none !important;
+    margin: 20px auto 0 auto !important;
+    width: 95% !important;
+    padding: 20px 12px !important;
+  }
+
+  .benefits-card .divider {
+    display: none;
+  }
+
+  .benefit-item {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 12px 8px;
+    border-radius: 12px;
+    height: 100%;
+    justify-content: flex-start;
+  }
+
+  .benefit-icon {
+    width: 36px;
+    height: 36px;
+    margin-bottom: 8px;
+  }
+
+  .benefit-item h3 {
+    font-size: 0.85rem;
+    margin-bottom: 4px;
+  }
+
+  .benefit-item p {
+    font-size: 0.7rem;
+  }
+
+  .how-it-works {
+    padding-top: 40px !important;
+  }
+}
+
+@media (max-width: 850px) {
+  .navbar {
+    flex-direction: column;
+    gap: 15px;
+  }
+  .steps-container {
+    flex-direction: column;
+    align-items: center;
+  }
+  .categories-grid {
+    grid-template-columns: 1fr;
+  }
+  .mv-grid, .values-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .footer-container {
+    grid-template-columns: 1fr;
+    gap: 30px;
+  }
+
+  /* REGLA EXCLUSIVA PARA MÓVILES (Tarjeta Azul Ordenada) */
+  .benefits-card {
+    position: relative !important;
+    transform: none !important;
+    margin: 20px auto 0 auto !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    gap: 20px !important;
+    padding: 25px 15px !important;
+    box-sizing: border-box !important;
+  }
+
+  .benefits-card .divider {
+    display: none !important;
+  }
+
+  .benefit-item {
+    width: 100% !important;
+    padding: 0 !important;
+    text-align: center !important;
+  }
+
+  .hero-section {
+    padding-left: 15px !important;
+    padding-right: 15px !important;
+    overflow: hidden !important;
+  }
+}
+
+/* ==========================================
+   DESPLIEGUE SERVICIOS DE IMPORTACIÓN
+   ========================================== */
+.import-options {
+  display: none;
+  margin-top: 10px;
+  margin-bottom: 15px;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.import-options.active {
+  display: flex;
+}
+
+button.service-link.toggle-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  cursor: pointer;
+  color: inherit;
+}
+
+.sub-service-btn {
+  background-color: rgba(255, 255, 255, 0.05);
+  color: #d0d7de;
+  padding: 6px 10px;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  text-decoration: none;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.sub-service-btn:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+.service-description {
+  font-size: 0.85rem;
+  color: #cccccc;
+  margin: 8px 0 12px 0;
+  line-height: 1.4;
+}
+
+/* 1. Contenedor relativo para posicionar el menú desplegable debajo del botón */
+.cotiza-dropdown-container {
+  position: relative;
+  display: inline-block;
+}
+
+/* 2. Estilo del botón principal */
+.btn-cotiza-main {
+  background-color: #d87342;
+  color: #ffffff;
+  border: none;
+  padding: 10px 22px;
+  border-radius: 25px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 4px 10px rgba(216, 115, 66, 0.3);
+  transition: background 0.2s;
+}
+
+.btn-cotiza-main:hover {
+  background-color: #c46233;
+}
+
+/* 3. Menú desplegable oculto por defecto y con diseño de tarjeta flotante */
+.cotiza-dropdown-menu {
+  display: none;
+  position: absolute;
+  right: 0;
+  top: 120%;
+  background-color: #ffffff;
+  min-width: 310px;
+  box-shadow: 0px 12px 30px rgba(8, 33, 77, 0.15);
+  border-radius: 14px;
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
+  z-index: 1000;
+  flex-direction: column;
+}
+
+/* 4. Clase que activa la visibilidad al hacer clic mediante JavaScript */
+.cotiza-dropdown-menu.show {
+  display: flex !important;
+}
+
+/* 5. Diseño de cada opción dentro del menú */
+.cotiza-dropdown-menu a {
+  color: #08214d !important;
+  padding: 14px 18px;
+  text-decoration: none !important;
+  font-size: 0.92rem;
+  font-family: inherit;
+  font-weight: 500;
+  border-bottom: 1px solid #edf2f7;
+  transition: all 0.2s ease;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cotiza-dropdown-menu a:last-child {
+  border-bottom: none;
+}
+
+.cotiza-dropdown-menu a:hover {
+  background-color: #fcf6f4;
+  color: #d87342 !important;
+  padding-left: 22px;
+}
+
+/* Ajuste responsivo del botón flotante de WhatsApp para móviles */
+@media (max-width: 768px) {
+    .whatsapp-float {
+        width: 50px !important;
+        height: 50px !important;
+        bottom: 20px !important;
+        left: 20px !important;
+    }
+
+    .whatsapp-float img {
+        width: 30px !important;
+        height: 30px !important;
+    }
+}
+
+/* ==========================================
+   ESTILOS CORREGIDOS PARA FORMULARIOS DJANGO (.as_p)
+   ========================================== */
+.card form p,
+.card div p {
+    margin-bottom: 1.1rem;
+    display: flex;
+    flex-direction: column;
+    text-align: left;
+}
+
+.card form label,
+.card div label {
+    font-weight: 700;
+    color: #0d2346;
+    margin-bottom: 0.4rem;
+    font-size: 0.9rem;
+    display: block;
+}
+
+.card form input[type="text"],
+.card form input[type="email"],
+.card form input[type="password"],
+.card form select,
+.card form textarea,
+.card div input[type="text"],
+.card div input[type="email"],
+.card div input[type="password"],
+.card div select,
+.card div textarea {
+    display: block;
+    width: 100%;
+    padding: 0.7rem 0.85rem;
+    font-size: 1rem;
+    font-weight: 400;
+    line-height: 1.5;
+    color: #212529;
+    background-color: #fff;
+    background-clip: padding-box;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    outline: none;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.card form input:focus,
+.card form select:focus,
+.card form textarea:focus,
+.card div input:focus,
+.card div select:focus,
+.card div textarea:focus {
+    border-color: #0d2346;
+    box-shadow: 0 0 0 3px rgba(13, 35, 70, 0.15);
+}
+
+.card form .helptext,
+.card form .help-text,
+.card div .helptext,
+.card div .help-text {
+    font-size: 0.78rem;
+    color: #64748b;
+    margin-top: 0.35rem;
+    line-height: 1.4;
+    display: block;
+}
+
+.card form ul.errorlist,
+.card div ul.errorlist {
+    color: #dc3545;
+    font-size: 0.85rem;
+    padding-left: 0;
+    list-style: none;
+    margin-top: 0.3rem;
+}
+
+/* ==========================================
+   ESTILOS DEFINITIVOS PARA .portium-auth-card (Login y Signup)
+   ========================================== */
+.portium-form-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 50px 20px;
+    background-color: #f8fafc;
+    min-height: 80vh;
+}
+
+.portium-auth-card {
+    background: #ffffff;
+    border-radius: 20px;
+    padding: 40px;
+    width: 100%;
+    max-width: 500px;
+    box-shadow: 0 10px 25px rgba(11, 34, 64, 0.08);
+    border: 1px solid #e2e8f0;
+}
+
+.portium-auth-card h2 {
+    color: #0b2240;
+    font-size: 1.8rem;
+    font-weight: 800;
+    margin-bottom: 8px;
+    text-align: center;
+}
+
+.portium-auth-card .subtitle {
+    color: #64748b;
+    font-size: 0.95rem;
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.portium-auth-card form p,
+.portium-auth-card form div {
+    margin-bottom: 1.1rem;
+    display: flex;
+    flex-direction: column;
+    text-align: left;
+}
+
+.portium-auth-card form label {
+    font-weight: 700;
+    color: #0d2346;
+    margin-bottom: 0.4rem;
+    font-size: 0.9rem;
+    display: block;
+}
+
+.portium-auth-card form input[type="text"],
+.portium-auth-card form input[type="email"],
+.portium-auth-card form input[type="password"],
+.portium-auth-card form select,
+.portium-auth-card form textarea {
+    display: block;
+    width: 100%;
+    padding: 0.7rem 0.85rem;
+    font-size: 1rem;
+    font-weight: 400;
+    line-height: 1.5;
+    color: #212529;
+    background-color: #fff;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    outline: none;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.portium-auth-card form input:focus,
+.portium-auth-card form select:focus,
+.portium-auth-card form textarea:focus {
+    border-color: #0d2346;
+    box-shadow: 0 0 0 3px rgba(13, 35, 70, 0.15);
+}
+
+.portium-auth-card .helptext,
+.portium-auth-card .help-text,
+.portium-auth-card span.helptext {
+    font-size: 0.78rem;
+    color: #64748b;
+    margin-top: 0.35rem;
+    line-height: 1.4;
+    display: block;
+}
+
+.portium-auth-card ul.errorlist {
+    color: #dc3545;
+    font-size: 0.85rem;
+    padding-left: 0;
+    list-style: none;
+    margin-top: 0.3rem;
+}
+
+.btn-submit-auth {
+    width: 100%;
+    background-color: #d87342;
+    color: #ffffff;
+    border: none;
+    border-radius: 12px;
+    padding: 14px;
+    font-weight: 700;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    margin-top: 15px;
+}
+
+.btn-submit-auth:hover {
+    background-color: #c25e2e;
+}
+
+.auth-footer-link {
+    text-align: center;
+    margin-top: 20px;
+    font-size: 0.9rem;
+    color: #64748b;
+}
+
+.auth-footer-link a {
+    color: #d87342;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.auth-footer-link a:hover {
+    text-decoration: underline;
+}

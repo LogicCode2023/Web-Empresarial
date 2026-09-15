@@ -1,0 +1,103 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inspección y Gestión en Origen (China) | Portium Group</title>
+    <link rel="stylesheet" href="{% static 'core/css/styles.css' %}">
+</head>
+<body style="background-color: #f8fafc;">
+
+    <!-- Header Minimalista -->
+    <header class="minimal-header">
+        <a href="{% url 'home' %}" class="minimal-logo">
+            <img src="{% static 'core/img/logo-portium.png' %}" alt="Portium Group">
+        </a>
+        <a href="javascript:history.back();" class="btn-cancel">&times; Cancelar y Volver</a>
+    </header>
+
+    <section class="services-hero-section" style="padding: 40px 20px; max-width: 800px; margin: 0 auto;">
+      <div class="services-header" style="text-align: center; margin-bottom: 30px;">
+        <h1 class="services-title" style="font-size: 2rem; color: #fff;">Inspección y Gestión en Origen (China)</h1>
+        <p style="color: #94a3b8; margin-top: 10px;">Protege tu inversión antes de embarcar. Sube tu proforma o detalla los datos de la fábrica para coordinar la inspección.</p>
+      </div>
+
+      <form method="POST" enctype="multipart/form-data" style="background: rgba(15, 23, 42, 0.6); padding: 30px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.1);">
+        {% csrf_token %}
+
+
+        <!-- Bloque condicional de contacto para usuarios no autenticados (pauta pagada) -->
+          {% if not request.user.is_authenticated %}
+          <div style="margin-bottom: 20px; background: rgba(255, 255, 255, 0.05); padding: 20px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.1);">
+              <p style="color: #f97316; margin-bottom: 15px; font-size: 0.95rem; font-weight: bold;">Datos de contacto
+                  para tu cotización:</p>
+              <div style="margin-bottom: 15px;">
+                  <label style="display: block; color: #cbd5e1; margin-bottom: 8px; font-size: 0.9rem;">Correo
+                      Electrónico (Obligatorio) *</label>
+                  <input type="email" name="email" required placeholder="Ej. correo@ejemplo.com"
+                         style="width: 100%; padding: 12px; background: #1e293b; border: 1px solid #334155; color: #fff; border-radius: 6px; box-sizing: border-box;">
+              </div>
+              <div>
+                  <label style="display: block; color: #cbd5e1; margin-bottom: 8px; font-size: 0.9rem;">Nombre de
+                      Contacto *</label>
+                  <input type="text" name="nombre_contacto" required placeholder="Ej. Juan Pérez"
+                         style="width: 100%; padding: 12px; background: #1e293b; border: 1px solid #334155; color: #fff; border-radius: 6px; box-sizing: border-box;">
+              </div>
+          </div>
+          {% endif %}
+
+        <!-- 1. Vía Rápida: Subida de Archivos -->
+        <div style="margin-bottom: 25px; border: 2px dashed rgba(255, 255, 255, 0.2); padding: 25px; text-align: center; border-radius: 8px; background: rgba(255, 255, 255, 0.02);">
+          <label for="documento_inspeccion" style="cursor: pointer; color: #e2e8f0; display: block;">
+            <span style="font-size: 2rem; display: block; margin-bottom: 8px;">📦</span>
+            <strong>Sube tu Proforma (PI), Planos o Catálogo del Producto</strong> o <span style="color: #f97316;">haz clic aquí</span>
+            <span style="display: block; font-size: 0.85rem; color: #94a3b8; margin-top: 5px;">Formatos permitidos: PDF, Excel, JPG, PNG</span>
+          </label>
+          <input type="file" id="documento_inspeccion" name="documento_inspeccion" style="display: none;">
+        </div>
+
+        <div style="display: flex; align-items: center; text-align: center; color: #64748b; margin: 25px 0;">
+          <hr style="flex: 1; border-color: rgba(255, 255, 255, 0.1);">
+          <span style="padding: 0 15px; font-size: 0.9rem;">O completa los datos de la inspección</span>
+          <hr style="flex: 1; border-color: rgba(255, 255, 255, 0.1);">
+        </div>
+
+        <!-- 2. Vía Manual en Orden Lógico -->
+
+        <!-- A. Proveedor y Ubicación -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+          <div>
+            <label style="display: block; color: #cbd5e1; margin-bottom: 8px; font-size: 0.9rem;">Nombre del Proveedor o Fábrica</label>
+            <input type="text" name="nombre_proveedor" placeholder="Ej. Alibaba Supplier / Empresa S.A." style="width: 100%; padding: 12px; background: #1e293b; border: 1px solid #334155; color: #fff; border-radius: 6px; box-sizing: border-box;">
+          </div>
+          <div>
+            <label style="display: block; color: #cbd5e1; margin-bottom: 8px; font-size: 0.9rem;">Ciudad / Provincia en China</label>
+            <input type="text" name="ubicacion_china" placeholder="Ej. Shenzhen, Yiwu, Ningbo" style="width: 100%; padding: 12px; background: #1e293b; border: 1px solid #334155; color: #fff; border-radius: 6px; box-sizing: border-box;">
+          </div>
+        </div>
+
+        <!-- B. Cantidad y Tipo de Servicio -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 25px;">
+          <div>
+            <label style="display: block; color: #cbd5e1; margin-bottom: 8px; font-size: 0.9rem;">Cantidad Total de Unidades</label>
+            <input type="number" name="cantidad_unidades" placeholder="Ej. 1500" style="width: 100%; padding: 12px; background: #1e293b; border: 1px solid #334155; color: #fff; border-radius: 6px; box-sizing: border-box;">
+          </div>
+          <div>
+            <label style="display: block; color: #cbd5e1; margin-bottom: 8px; font-size: 0.9rem;">Tipo de Control Requerido</label>
+            <select name="tipo_control" style="width: 100%; padding: 12px; background: #1e293b; border: 1px solid #334155; color: #fff; border-radius: 6px;">
+              <option value="psi">Inspección Pre-embarque (PSI - Calidad y Muestreo)</option>
+              <option value="carga">Supervisión de Carga / Contenedor (CLS)</option>
+              <option value="auditoria">Auditoría de Proveedor / Fábrica</option>
+            </select>
+          </div>
+        </div>
+
+        <button type="submit" style="width: 100%; padding: 14px; background: #f97316; color: #fff; border: none; border-radius: 6px; font-weight: bold; font-size: 1rem; cursor: pointer; transition: background 0.2s;">
+          Solicitar Inspección en Origen &rarr;
+        </button>
+      </form>
+    </section>
+
+</body>
+</html>

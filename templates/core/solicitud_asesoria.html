@@ -1,0 +1,144 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solicitud de Asesoría de Compras | Portium Group</title>
+    <link rel="stylesheet" href="{% static 'core/css/styles.css' %}">
+</head>
+<body style="background-color: #f8fafc;">
+
+    <!-- Header Minimalista -->
+    <header class="minimal-header">
+        <a href="{% url 'home' %}" class="minimal-logo">
+            <img src="{% static 'core/img/logo-portium.png' %}" alt="Portium Group">
+        </a>
+        <a href="javascript:history.back();" class="btn-cancel">&times; Cancelar y Volver</a>
+    </header>
+
+    <!-- Contenedor del Formulario Multipaso -->
+    <div class="form-container">
+        <div class="form-card">
+            <h2 class="form-title">Asesoría y Validación de Compras</h2>
+            <p class="form-subtitle">Protege tu dinero y asegura tus negociaciones internacionales en China sin riesgos.</p>
+
+            <form id="asesoriaForm" method="POST" enctype="multipart/form-data" action="{% url 'solicitud_asesoria' %}">
+                {% csrf_token %}
+
+                <!-- PASO 1: Datos de Contacto y Estado de Negociación -->
+                <div id="step-1" class="form-step active-step">
+                    <div class="step-indicator">Paso 1 de 2: Información Básica</div>
+
+                    <!-- Bloque condicional: Solo se pide correo y nombre si el usuario es anónimo -->
+                    {% if not request.user.is_authenticated %}
+                    <div class="input-group">
+                        <label for="email">Correo Electrónico (Obligatorio) *</label>
+                        <input type="email" id="email" name="email" placeholder="Ej: correo@ejemplo.com" required style="width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 1rem;">
+                    </div>
+                    {% endif %}
+
+                    <div class="input-group">
+                        <label for="nombre">Tu Nombre o Razón Social *</label>
+                        <input type="text" id="nombre" name="nombre" placeholder="Ej: Juan Pérez" required>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="whatsapp">Teléfono / WhatsApp de contacto *</label>
+                        <input type="tel" id="whatsapp" name="whatsapp" placeholder="Ej: +593 99 123 4567" required>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="plataforma">¿Dónde encontraste al proveedor? *</label>
+                        <select id="plataforma" name="plataforma" required>
+                            <option value="" disabled selected>Selecciona una opción</option>
+                            <option value="Alibaba">Alibaba / Made-in-China</option>
+                            <option value="Contacto Directo (WeChat/Email)">Contacto Directo (WeChat / Correo)</option>
+                            <option value="Feria Presencial">Feria Presencial en China</option>
+                            <option value="Otro">Otro medio</option>
+                        </select>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="estado_negociacion">Estado actual de tu negociación *</label>
+                        <select id="estado_negociacion" name="estado_negociacion" required>
+                            <option value="" disabled selected>Selecciona una opción</option>
+                            <option value="Cotizando">Apenas cotizando o pidiendo precios</option>
+                            <option value="Con Proforma / Por Pagar">Tengo factura proforma y debo realizar el pago</option>
+                            <option value="Dudas con Contrato">Tengo dudas sobre el contrato o condiciones (Incoterms)</option>
+                        </select>
+                    </div>
+
+                    <button type="button" class="btn-primary" onclick="goToStep2()">Continuar a Detalles Financieros &rarr;</button>
+                </div>
+
+                <!-- PASO 2: Montos y Validación de Seguridad -->
+                <div id="step-2" class="form-step hidden-step">
+                    <div class="step-indicator">Paso 2 de 2: Montos y Seguridad</div>
+
+                    <div class="input-group">
+                        <label for="monto">Monto aproximado de la compra (USD)</label>
+                        <input type="text" id="monto" name="monto" placeholder="Ej: $5,000 - $10,000 (Opcional)">
+                    </div>
+
+                    <div class="input-group">
+                        <label for="tipo_asesoria">¿Qué tipo de asesoría requieres con urgencia? *</label>
+                        <select id="tipo_asesoria" name="tipo_asesoria" required>
+                            <option value="" disabled selected>Selecciona el servicio principal</option>
+                            <option value="Verificacion de Proveedor">Verificar si el proveedor chino es confiable o estafa</option>
+                            <option value="Revision de Pagos y Contrato">Revisión de métodos de pago internacional y contratos</option>
+                            <option value="Negociacion Completa">Acompañamiento en toda la negociación y cierre</option>
+                        </select>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="archivo_proforma">Adjuntar Proforma o Factura Comercial</label>
+                        <input type="file" id="archivo_proforma" name="archivo_proforma" accept="image/*,.pdf">
+                        <small class="help-text">Sube la proforma, cotización o contrato enviado por el proveedor (Opcional).</small>
+                    </div>
+
+                    <div class="button-group">
+                        <button type="button" class="btn-secondary" onclick="goToStep1()">&larr; Volver</button>
+                        <button type="submit" class="btn-primary">Enviar Solicitud de Asesoría</button>
+                    </div>
+                </div>
+
+            </form>
+        </div>
+    </div>
+
+    <!-- Script de Cambio de Pasos -->
+    <script>
+        function goToStep2() {
+          const nombre = document.getElementById('nombre');
+          const whatsapp = document.getElementById('whatsapp');
+          const plataforma = document.getElementById('plataforma');
+          const estado = document.getElementById('estado_negociacion');
+          const email = document.getElementById('email');
+
+          // Validamos primero el correo si el usuario es anónimo y el campo está visible
+          if (email && !email.checkValidity()) {
+            document.getElementById('asesoriaForm').reportValidity();
+            return;
+          }
+
+          if (!nombre.checkValidity() || !whatsapp.checkValidity() || !plataforma.checkValidity() || !estado.checkValidity()) {
+            document.getElementById('asesoriaForm').reportValidity();
+            return;
+          }
+
+          document.getElementById('step-1').classList.remove('active-step');
+          document.getElementById('step-1').classList.add('hidden-step');
+          document.getElementById('step-2').classList.remove('hidden-step');
+          document.getElementById('step-2').classList.add('active-step');
+        }
+
+        function goToStep1() {
+          document.getElementById('step-2').classList.remove('active-step');
+          document.getElementById('step-2').classList.add('hidden-step');
+          document.getElementById('step-1').classList.remove('hidden-step');
+          document.getElementById('step-1').classList.add('active-step');
+        }
+    </script>
+</body>
+</html>

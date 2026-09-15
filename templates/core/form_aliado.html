@@ -1,0 +1,69 @@
+{% extends 'core/base_admin.html' %}
+{% load static %}
+
+{% block content %}
+<div style="max-width: 600px; margin: 40px auto; padding: 30px; background: #ffffff; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+
+    <div style="border-bottom: 2px solid #e2e8f0; padding-bottom: 15px; margin-bottom: 25px;">
+        <h2 style="color: #0d2346; margin: 0; font-size: 1.5rem;">{{ accion }} Empresa Aliada</h2>
+    </div>
+
+    <form method="post">
+        {% csrf_token %}
+
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #334155;">Nombre de la Agencia /
+                Aliado:</label>
+            <input type="text" name="nombre_empresa" value="{{ aliado.nombre_empresa }}" required
+                   style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 1rem;">
+        </div>
+
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #334155;">Persona de
+                Contacto:</label>
+            <input type="text" name="contacto" class="form-control" value="{{ aliado.contacto|default:'' }}"
+                   style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 1rem;">
+        </div>
+
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #334155;">Correo Electrónico de
+                Cotizaciones:</label>
+            <input type="email" name="email" value="{{ aliado.email }}" required
+                   style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 1rem;">
+        </div>
+
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #334155;">Teléfono:</label>
+            <input type="text" name="telefono" class="form-control" value="{{ aliado.telefono }}"
+                   style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 1rem;">
+        </div>
+
+        <div style="margin-bottom: 25px;">
+            <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #334155;">Especialidad / Tipo de
+                Servicio:</label>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #cbd5e1;">
+                {% for key, value in tipo_servicio_choices %}
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <input type="checkbox" name="servicios_ofrecidos" value="{{ key }}" id="serv_{{ key }}"
+                           {% if key in aliado.servicios_ofrecidos %}checked{% endif %}
+                           style="width: 18px; height: 18px; accent-color: #ff6600; cursor: pointer;">
+                    <label for="serv_{{ key }}"
+                           style="font-size: 0.9rem; color: #1e293b; cursor: pointer; font-weight: 500;">
+                        {{ value }}
+                    </label>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 15px;">
+            <button type="submit"
+                    style="background-color: #ff6600; color: #ffffff; padding: 12px 25px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 1rem;">
+                Guardar Aliado
+            </button>
+            <a href="{% url 'lista_aliados' %}"
+               style="background-color: #cbd5e1; color: #0f172a; padding: 12px 25px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 1rem; display: inline-flex; align-items: center;">Cancelar</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

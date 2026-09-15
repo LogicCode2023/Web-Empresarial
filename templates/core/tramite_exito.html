@@ -1,0 +1,24 @@
+{% extends 'core/base.html' %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 text-center">
+            <div class="card shadow-sm p-5 bg-white rounded">
+                <h2 class="text-success mb-3">¡Solicitud Registrada con Éxito!</h2>
+                <p class="text-muted">Tu trámite ha sido ingresado correctamente en nuestro sistema corporativo.</p>
+
+                <div class="alert alert-secondary my-4">
+                    Código de Trámite: <strong class="text-dark fs-4">{{ tramite.numero_tramite }}</strong>
+                </div>
+
+                <p class="small text-muted mb-4">Puedes hacer el seguimiento de este código desde tu panel de usuario o comunicarte con tu asesor asignado.</p>
+
+                <a href="/admin/core/tramite/" class="btn text-white fw-bold" style="background-color: #ff6600;">
+                    Ver en Panel Administrativo
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

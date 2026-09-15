@@ -1,0 +1,188 @@
+{% extends 'core/base_admin.html' %}
+{% load static %}
+
+{% block content %}
+<div style="max-width: 900px; margin: 40px auto; padding: 30px; background: #ffffff; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+
+    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e2e8f0; padding-bottom: 15px; margin-bottom: 25px;">
+        <h2 style="color: #0d2346; margin: 0; font-size: 1.5rem;">Gestión de Trámite: {{ tramite.numero_tramite }}</h2>
+        <span style="background: #e0f2fe; color: #0369a1; padding: 6px 12px; border-radius: 20px; font-weight: 600; font-size: 0.9rem;">
+            ID Interno: #{{ tramite.id }}
+        </span>
+    </div>
+
+    <div style="margin-bottom: 25px; padding: 20px; background: #f8fafc; border-radius: 6px; border-left: 4px solid #0d2346;">
+        <p style="margin: 5px 0;"><strong>Cliente Propietario:</strong> {{ tramite.cliente.username }}</p>
+        <p style="margin: 5px 0;"><strong>Tipo de Servicio:</strong> {{ tramite.get_tipo_servicio_display }}</p>
+        <p style="margin: 5px 0;"><strong>Fecha de Creación:</strong> {{ tramite.fecha_creacion }}</p>
+    </div>
+
+    <form method="post">
+        {% csrf_token %}
+        <div style="margin-bottom: 25px;">
+            <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #334155;">Actualizar Estado del Trámite:</label>
+            <select name="estado" style="width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 1rem;">
+                <option value="pendiente" {% if tramite.estado == 'pendiente' %}selected{% endif %}>Pendiente de Revisión</option>
+                <option value="en_proceso" {% if tramite.estado == 'en_proceso' %}selected{% endif %}>En Proceso</option>
+                <option value="completado" {% if tramite.estado == 'completado' %}selected{% endif %}>Completado</option>
+                <option value="cancelado" {% if tramite.estado == 'cancelado' %}selected{% endif %}>Cancelado</option>
+            </select>
+        </div>
+
+        <!-- Información Específica y Archivos del Trámite -->
+        <div style="margin-top: 30px; border-top: 1px solid #e2e8f0; padding-top: 20px;">
+            <h3 style="color: #0d2346; font-size: 1.2rem; margin-bottom: 15px;">Información Específica y Archivos del Trámite</h3>
+
+            <div style="background: #f1f5f9; padding: 20px; border-radius: 6px; margin-bottom: 15px;">
+                {% if tramite.tipo_servicio == 'busqueda' and tramite.detalle_busqueda %}
+                    {% with d=tramite.detalle_busqueda %}
+                        <p><strong>Producto:</strong> {{ d.producto }}</p>
+                        {% if d.marca_referencia %}<p><strong>Marca de referencia:</strong> {{ d.marca_referencia }}</p>{% endif %}
+                        <p><strong>Nombre de contacto:</strong> {{ d.nombre_contacto }}</p>
+                        <p><strong>Teléfono:</strong> {{ d.telefono }}</p>
+                        <p><strong>¿Ha importado antes?:</strong> {{ d.ha_importado_antes }}</p>
+                        {% if d.link_producto %}<p><strong>Link del producto:</strong> <a href="{{ d.link_producto }}" target="_blank">{{ d.link_producto }}</a></p>{% endif %}
+                        {% if d.cantidad_estimada %}<p><strong>Cantidad estimada:</strong> {{ d.cantidad_estimada }}</p>{% endif %}
+                        {% if d.especificaciones %}<p><strong>Especificaciones:</strong> {{ d.especificaciones }}</p>{% endif %}
+                        {% if d.archivo_adjunto %}
+                            <p style="margin-top: 15px;"><strong>Archivo Adjunto:</strong><br>
+                                <a href="{{ d.archivo_adjunto.url }}" target="_blank" style="color: #2563eb; text-decoration: underline; font-weight: 600;">Ver / Descargar Archivo Subido</a>
+                            </p>
+                        {% endif %}
+                    {% endwith %}
+
+                {% elif tramite.tipo_servicio == 'asesoria' and tramite.detalle_asesoria %}
+                    {% with d=tramite.detalle_asesoria %}
+                        <p><strong>Nombre de contacto:</strong> {{ d.nombre_contacto }}</p>
+                        <p><strong>Teléfono:</strong> {{ d.telefono }}</p>
+                        <p><strong>Dónde encontró proveedor:</strong> {{ d.donde_encontro_proveedor }}</p>
+                        <p><strong>Estado de negociación:</strong> {{ d.estado_negociacion }}</p>
+                        {% if d.monto_aproximado %}<p><strong>Monto aproximado:</strong> {{ d.monto_aproximado }}</p>{% endif %}
+                        <p><strong>Tipo de asesoría / Urgencia:</strong> {{ d.tipo_asesoria_urgencia }}</p>
+                        {% if d.archivo_adjunto %}
+                            <p style="margin-top: 15px;"><strong>Archivo Adjunto:</strong><br>
+                                <a href="{{ d.archivo_adjunto.url }}" target="_blank" style="color: #2563eb; text-decoration: underline; font-weight: 600;">Ver / Descargar Archivo Subido</a>
+                            </p>
+                        {% endif %}
+                    {% endwith %}
+
+                {% elif tramite.tipo_servicio == 'logistica' and tramite.detalle_logistica %}
+                    {% with d=tramite.detalle_logistica %}
+                        <p><strong>Tipo de carga:</strong> {{ d.tipo_carga }}</p>
+                        <p><strong>Incoterm:</strong> {{ d.incoterm }}</p>
+                        <p><strong>Puerto origen:</strong> {{ d.puerto_origen }}</p>
+                        <p><strong>Puerto destino:</strong> {{ d.puerto_destino }}</p>
+                        {% if d.archivo_adjunto %}
+                            <p style="margin-top: 15px;"><strong>Archivo Adjunto:</strong><br>
+                                <a href="{{ d.archivo_adjunto.url }}" target="_blank" style="color: #2563eb; text-decoration: underline; font-weight: 600;">Ver / Descargar Archivo Subido</a>
+                            </p>
+                        {% endif %}
+                    {% endwith %}
+
+                {% elif tramite.tipo_servicio == 'nacionalizacion' and tramite.detalle_nacionalizacion %}
+                    {% with d=tramite.detalle_nacionalizacion %}
+                        <p><strong>Descripción comercial:</strong> {{ d.descripcion_comercial }}</p>
+                        <p><strong>Uso / Aplicación:</strong> {{ d.uso_aplicacion }}</p>
+                        <p><strong>Valor FOB:</strong> {{ d.valor_fob }}</p>
+                        <p><strong>Certificado de origen:</strong> {{ d.certificado_origen }}</p>
+                        <p><strong>Entidad de control:</strong> {{ d.entidad_control }}</p>
+                        <p><strong>Tipo de régimen:</strong> {{ d.tipo_regimen }}</p>
+                        {% if d.archivo_adjunto %}
+                            <p style="margin-top: 15px;"><strong>Archivo Adjunto:</strong><br>
+                                <a href="{{ d.archivo_adjunto.url }}" target="_blank" style="color: #2563eb; text-decoration: underline; font-weight: 600;">Ver / Descargar Archivo Subido</a>
+                            </p>
+                        {% endif %}
+                    {% endwith %}
+
+                {% elif tramite.tipo_servicio == 'inspeccion' and tramite.detalle_inspeccion %}
+                    {% with d=tramite.detalle_inspeccion %}
+                        <p><strong>Nombre del proveedor:</strong> {{ d.nombre_proveedor }}</p>
+                        <p><strong>Ciudad en China:</strong> {{ d.ciudad_china }}</p>
+                        <p><strong>Cantidad de unidades:</strong> {{ d.cantidad_unidades }}</p>
+                        <p><strong>Tipo de control:</strong> {{ d.tipo_control }}</p>
+                        {% if d.archivo_adjunto %}
+                            <p style="margin-top: 15px;"><strong>Archivo Adjunto:</strong><br>
+                                <a href="{{ d.archivo_adjunto.url }}" target="_blank" style="color: #2563eb; text-decoration: underline; font-weight: 600;">Ver / Descargar Archivo Subido</a>
+                            </p>
+                        {% endif %}
+                    {% endwith %}
+
+                {% elif tramite.tipo_servicio == 'transporte_local' and tramite.detalle_transporte %}
+                    {% with d=tramite.detalle_transporte %}
+                        <p><strong>¿Cuenta con levante?:</strong> {{ d.cuenta_con_levante }}</p>
+                        <p><strong>Punto de partida:</strong> {{ d.punto_partida }}</p>
+                        <p><strong>Ciudad destino:</strong> {{ d.ciudad_destino }}</p>
+                        <p><strong>Tipo de vehículo:</strong> {{ d.tipo_vehiculo }}</p>
+                        <p><strong>Peso estimado:</strong> {{ d.peso_estimado }}</p>
+                        {% if d.archivo_adjunto %}
+                            <p style="margin-top: 15px;"><strong>Archivo Adjunto:</strong><br>
+                                <a href="{{ d.archivo_adjunto.url }}" target="_blank" style="color: #2563eb; text-decoration: underline; font-weight: 600;">Ver / Descargar Archivo Subido</a>
+                            </p>
+                        {% endif %}
+                    {% endwith %}
+
+                {% elif tramite.tipo_servicio == 'representacion' and tramite.detalle_representacion %}
+                    {% with d=tramite.detalle_representacion %}
+                        <p><strong>Nombre de la empresa:</strong> {{ d.nombre_empresa }}</p>
+                        <p><strong>Teléfono:</strong> {{ d.telefono }}</p>
+                        <p><strong>Canales de distribución:</strong> {{ d.canales_distribucion }}</p>
+                        <p><strong>Nombre de fábrica en China:</strong> {{ d.nombre_fabrica_china }}</p>
+                        <p><strong>Alcance de representación:</strong> {{ d.alcance_representacion }}</p>
+                        {% if d.proyeccion_anual %}<p><strong>Proyección anual:</strong> {{ d.proyeccion_anual }}</p>{% endif %}
+                        {% if d.archivo_adjunto %}
+                            <p style="margin-top: 15px;"><strong>Archivo Adjunto:</strong><br>
+                                <a href="{{ d.archivo_adjunto.url }}" target="_blank" style="color: #2563eb; text-decoration: underline; font-weight: 600;">Ver / Descargar Archivo Subido</a>
+                            </p>
+                        {% endif %}
+                    {% endwith %}
+
+                {% else %}
+                    <p style="color: #64748b; font-style: italic;">No hay detalles adicionales registrados para este trámite.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Sección de Gestión con Aliados Estratégicos (Actualizada con Checkboxes) -->
+        <div style="background: #f8fafc; padding: 20px; border-radius: 8px; border: 1px solid #cbd5e1; margin-top: 25px;">
+            <h3 style="color: #0d2346; font-size: 1.1rem; margin-bottom: 10px;">Gestión con Aliados Estratégicos</h3>
+
+            {% if tramite.enviado_a_aliado %}
+                <p style="color: #16a34a; font-size: 0.9rem; font-weight: 600; margin-bottom: 15px;">
+                    ✓ Enviado previamente a: {{ tramite.aliado_asignado.nombre_empresa }} ({{ tramite.fecha_envio_aliado|date:"d M Y, H:i" }})
+                </p>
+                <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 10px;">Puedes marcar nuevos aliados si deseas reenviar o cotizar con más agencias:</p>
+            {% endif %}
+
+            <div style="margin-bottom: 15px;">
+                <label style="display: block; font-size: 0.9rem; font-weight: 600; color: #334155; margin-bottom: 8px;">
+                    Seleccionar una o varias Agencias Aliadas:
+                </label>
+
+                <div style="display: grid; grid-template-columns: 1fr; gap: 10px;">
+                    {% for aliado in aliados_disponibles %}
+                        <div style="background: #ffffff; padding: 10px 15px; border: 1px solid #e2e8f0; border-radius: 6px; display: flex; align-items: center;">
+                            <!-- El atributo name="aliados_seleccionados" permite recibir múltiples valores mediante getlist() -->
+                            <input type="checkbox" name="aliados_seleccionados" value="{{ aliado.id }}" id="aliado_{{ aliado.id }}" style="width: 18px; height: 18px; cursor: pointer; margin-right: 12px;">
+                            <label for="aliado_{{ aliado.id }}" style="cursor: pointer; width: 100%; font-size: 0.95rem; color: #1e293b;">
+                                <strong>{{ aliado.nombre_empresa }}</strong>
+                                <span style="color: #64748b; font-size: 0.85rem;">({{ aliado.email }})</span>
+                            </label>
+                        </div>
+                    {% empty %}
+                        <p style="color: #dc2626; font-size: 0.9rem; font-style: italic;">No hay aliados activos registrados para este tipo de servicio.</p>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <button type="submit" style="background-color: #0284c7; color: #fff; border: none; padding: 10px 16px; border-radius: 6px; font-weight: 600; cursor: pointer;">
+                Enviar Requerimiento a Cotizar a los Seleccionados ➔
+            </button>
+        </div>
+
+        <div style="margin-top: 35px; display: flex; gap: 15px;">
+            <button type="submit" style="background-color: #ff6600; color: #ffffff; padding: 12px 25px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 1rem;">Guardar Cambios</button>
+            <a href="{% url 'dashboard_tramites' %}" style="background-color: #cbd5e1; color: #0f172a; padding: 12px 25px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 1rem; display: inline-flex; align-items: center;">Volver al Panel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

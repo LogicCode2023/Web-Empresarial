@@ -1,0 +1,265 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portium Group - Global Trade & Logistics</title>
+    <!-- Vinculación del archivo CSS -->
+    <link rel="stylesheet" href="{% static 'core/css/styles.css' %}">
+    <!-- CDN de FontAwesome para Iconos de Redes Sociales -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Header de gran formato */
+        header {
+            position: sticky !important;
+            top: 0 !important;
+            z-index: 9999 !important;
+            background-color: #ffffff !important;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
+            width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+
+        /* Barra de navegación extragrande */
+        header .navbar {
+            display: flex !important;
+            justify-content: space-between !important;
+            align-items: center !important;
+            height: 120px !important; /* Altura máxima para un logo imponente */
+            padding: 0 40px !important;
+            margin: 0 !important;
+            box-sizing: border-box !important;
+            position: relative !important;
+            background: #ffffff !important;
+        }
+
+        /* Contenedor del logo */
+        header .navbar .logo {
+            position: relative !important;
+            left: auto !important;
+            display: flex !important;
+            align-items: center !important;
+            height: 100% !important;
+        }
+
+        /* Logo duplicado en tamaño (95px) */
+        header .navbar .logo img {
+            height: 95px !important; /* ¡El doble de grande y completamente legible! */
+            width: auto !important;
+            max-height: none !important;
+            display: block !important;
+        }
+
+        /* Enlaces de navegación */
+        header .navbar .nav-links {
+            display: flex !important;
+            gap: 30px !important;
+            align-items: center !important;
+            margin: 0 !important;
+            font-size: 1.1rem;
+        }
+
+        /* Variante exclusiva para Servicios (centrado simétrico perfecto) */
+        header .navbar.nav-centered {
+            justify-content: center !important;
+        }
+
+        header .navbar.nav-centered .logo {
+            position: absolute !important;
+            left: 40px !important;
+        }
+
+        header .navbar.nav-centered .nav-links {
+            margin: 0 auto !important;
+            position: static !important;
+            transform: none !important;
+        }
+    </style>
+
+</head>
+<body>
+
+<!-- Navegación Principal y Header Global -->
+<header>
+    <nav class="navbar{% if request.resolver_match.url_name == 'servicios' %} nav-centered{% endif %}">
+        <div class="logo">
+            <a href="{% url 'home' %}">
+                <img src="{% static 'core/img/logo-portium.png' %}" alt="Portium Group Logo">
+            </a>
+        </div>
+
+        <!-- Enlaces públicos (Se ocultan automáticamente en el Panel de Operaciones y en la vista de gestión) -->
+        {% if request.resolver_match.url_name != 'dashboard_tramites' and request.resolver_match.url_name != 'gestionar_tramite' %}
+        <div class="nav-links">
+            <a href="{% url 'home' %}">Home</a>
+            <a href="{% url 'nosotros' %}">Nosotros</a>
+            <a href="{% url 'servicios' %}">Servicios</a>
+        </div>
+        {% endif %}
+
+        <!-- Control de Autenticación en la Navbar (Siempre visible) -->
+        <div class="nav-auth-container" style="display: flex; align-items: center; gap: 15px; {% if request.resolver_match.url_name == 'dashboard_tramites' or request.resolver_match.url_name == 'gestionar_tramite' %}margin-left: auto;{% endif %}">
+            {% if user.is_authenticated %}
+                <span style="font-size: 0.95rem; color: #0d2346; font-weight: 600;">Hola, {{ user.username }}</span>
+
+                <!-- Botón de Mis Trámites integrado correctamente -->
+                <a href="{% url 'mis_tramites' %}" style="background-color: #0d2346; color: #ffffff; padding: 6px 12px; border-radius: 4px; text-decoration: none; font-weight: 500; font-size: 0.9rem; transition: background 0.2s;" onmouseover="this.style.backgroundColor='#1e3a8a';" onmouseout="this.style.backgroundColor='#0d2346';">Mis Trámites</a>
+
+                <form method="post" action="{% url 'logout' %}" style="display: inline; margin: 0;">
+                    {% csrf_token %}
+                    <button type="submit" style="background: none; border: 1px solid #0d2346; color: #0d2346; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.9rem; transition: background 0.2s, color 0.2s;" onmouseover="this.style.backgroundColor='#0d2346'; this.style.color='#ffffff';" onmouseout="this.style.backgroundColor='transparent'; this.style.color='#0d2346';">Cerrar Sesión</button>
+                </form>
+            {% else %}
+                <a href="{% url 'login' %}" style="font-size: 1rem; color: #0d2346; text-decoration: none; font-weight: 500;">Iniciar Sesión</a>
+                <a href="{% url 'signup' %}" style="background-color: #ff6600; color: #ffffff; padding: 8px 16px; border-radius: 4px; text-decoration: none; font-weight: 600; font-size: 0.95rem;">Registrarse</a>
+            {% endif %}
+        </div>
+
+        <!-- Menú desplegable del botón Cotiza (Oculto en Servicios, Panel de Operaciones y Gestión de Trámite) -->
+        {% if request.resolver_match.url_name != 'servicios' and request.resolver_match.url_name != 'dashboard_tramites' and request.resolver_match.url_name != 'gestionar_tramite' %}
+        <div class="cotiza-dropdown-container">
+            <button type="button" class="btn-cotiza-main" onclick="toggleCotizaDropdown(event)">
+                ★ Cotiza ▾
+            </button>
+
+            <div class="cotiza-dropdown-menu" id="cotizaDropdownMenu">
+                <a href="{% url 'crear_tramite' 'busqueda' %}?producto=Proveedores">🔍 Búsqueda de proveedores chinos</a>
+                <a href="{% url 'crear_tramite' 'asesoria' %}?producto=Asesoria">📄 Asesoría de Compras</a>
+
+                <!-- Opción con submenú para Importación por Etapas -->
+                <div class="dropdown-submenu-wrapper" style="position: relative;">
+                    <a href="javascript:void(0);" onclick="toggleEtapasSubmenu(event)"
+                       style="display: flex; justify-content: space-between; align-items: center;">
+                        <span>🚢 Servicios de Importación por Etapas</span>
+                        <span id="etapasArrow" style="font-size: 0.75rem; transition: transform 0.2s;">▶</span>
+                    </a>
+                    <div class="etapas-submenu-content" id="etapasSubmenu"
+                         style="display: none; padding-left: 12px; border-left: 2px solid #f97316; margin: 6px 0 6px 14px; background: transparent;">
+                        <a href="{% url 'crear_tramite' 'logistica' %}" style="font-size: 0.85rem; padding: 7px 10px; display: block; color: #475569; text-decoration: none; border-radius: 4px; transition: background 0.2s, color 0.2s;" onmouseover="this.style.backgroundColor='#f1f5f9'; this.style.color='#0f172a'" onmouseout="this.style.backgroundColor='transparent'; this.style.color='#475569'">🚢 Logística Internacional (Fletes/Seguros)</a>
+                        <a href="{% url 'crear_tramite' 'nacionalizacion' %}" style="font-size: 0.85rem; padding: 7px 10px; display: block; color: #475569; text-decoration: none; border-radius: 4px; transition: background 0.2s, color 0.2s;" onmouseover="this.style.backgroundColor='#f1f5f9'; this.style.color='#0f172a'" onmouseout="this.style.backgroundColor='transparent'; this.style.color='#475569'">📄 Nacionalización y Aduanas</a>
+                        <a href="{% url 'crear_tramite' 'inspeccion' %}" style="font-size: 0.85rem; padding: 7px 10px; display: block; color: #475569; text-decoration: none; border-radius: 4px; transition: background 0.2s, color 0.2s;" onmouseover="this.style.backgroundColor='#f1f5f9'; this.style.color='#0f172a'" onmouseout="this.style.backgroundColor='transparent'; this.style.color='#475569'">🔍 Inspección y Gestión en Origen</a>
+                        <a href="{% url 'crear_tramite' 'transporte_local' %}" style="font-size: 0.85rem; padding: 7px 10px; display: block; color: #475569; text-decoration: none; border-radius: 4px; transition: background 0.2s, color 0.2s;" onmouseover="this.style.backgroundColor='#f1f5f9'; this.style.color='#0f172a'" onmouseout="this.style.backgroundColor='transparent'; this.style.color='#475569'">🚚 Transporte Local y Entrega</a>
+                    </div>
+                </div>
+
+                <a href="{% url 'crear_tramite' 'representacion' %}?producto=Representacion">🤝 Representación en China</a>
+            </div>
+        </div>
+        {% endif %}
+    </nav>
+</header>
+<!-- Fin del Header -->
+
+<!-- Inyección del contenido de cada vista (Home, Nosotros, etc.) de forma limpia -->
+{% block content %}
+{% endblock %}
+
+<!-- Footer Principal (Global - Se oculta en el Panel de Operaciones y en la vista de gestión) -->
+{% if request.resolver_match.url_name != 'dashboard_tramites' and request.resolver_match.url_name != 'gestionar_tramite' %}
+<footer class="main-footer">
+    <div class="footer-container">
+
+        <!-- Columna 1: Branding y Redes -->
+        <div class="footer-col brand-col">
+            <div class="footer-logo">
+                <img src="{% static 'core/img/logo-portium.png' %}" alt="Portium Group Logo">
+            </div>
+            <p class="brand-desc">
+                Tu aliado estratégico en importaciones directas desde fábrica sin intermediarios.
+            </p>
+            <div class="social-links">
+                <a href="https://www.instagram.com/portiumec" target="_blank" rel="noopener noreferrer" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+                <a href="https://www.tiktok.com/@portiumec" target="_blank" rel="noopener noreferrer" aria-label="TikTok"><i class="fab fa-tiktok"></i></a>
+            </div>
+        </div>
+
+        <!-- Columna 2: Navegación -->
+        <div class="footer-col">
+            <h4>Navegación</h4>
+            <ul>
+                <li><a href="{% url 'home' %}">Home</a></li>
+                <li><a href="{% url 'nosotros' %}">Nosotros</a></li>
+                <li><a href="{% url 'solicitud_busqueda' %}">Cotizar</a></li>
+            </ul>
+        </div>
+
+        <!-- Columna 3: Servicios -->
+        <div class="footer-services">
+            <h3 style="color: #f97316; font-size: 1rem; margin-bottom: 15px; font-weight: bold;">Servicios</h3>
+            <ul style="list-style: none; padding: 0; margin: 0;">
+                <li style="margin-bottom: 10px;"><a href="{% url 'crear_tramite' 'busqueda' %}" style="color: #ffffff; text-decoration: none; font-size: 0.9rem; transition: color 0.2s;" onmouseover="this.style.color='#94a3b8'" onmouseout="this.style.color='#ffffff'">Búsqueda de Proveedores Directos</a></li>
+                <li style="margin-bottom: 10px;"><a href="{% url 'crear_tramite' 'asesoria' %}" style="color: #ffffff; text-decoration: none; font-size: 0.9rem; transition: color 0.2s;" onmouseover="this.style.color='#94a3b8'" onmouseout="this.style.color='#ffffff'">Asesoría de Compras</a></li>
+                <li style="margin-bottom: 10px;"><a href="{% url 'seleccion_etapas' %}" style="color: #ffffff; text-decoration: none; font-size: 0.9rem; transition: color 0.2s;" onmouseover="this.style.color='#94a3b8'" onmouseout="this.style.color='#ffffff'">Servicios de Importación por Etapas</a></li>
+                <li style="margin-bottom: 10px;"><a href="{% url 'crear_tramite' 'representacion' %}" style="color: #ffffff; text-decoration: none; font-size: 0.9rem; transition: color 0.2s;" onmouseover="this.style.color='#94a3b8'" onmouseout="this.style.color='#ffffff'">Representación en China</a></li>
+            </ul>
+        </div>
+
+        <!-- Columna 4: Contacto -->
+        <div class="footer-col contact-col">
+            <h4>Contacto</h4>
+            <p><i class="fas fa-map-marker-alt"></i> Ecuador</p>
+            <p><i class="fas fa-envelope"></i> contacto@portiumgroup.com</p>
+            <p><i class="fas fa-phone"></i> +593 98 779 2137</p>
+        </div>
+
+    </div>
+
+    <!-- Barra de Derechos Reservados con el enlace del Panel de Operaciones -->
+    <div class="footer-bottom"
+         style="display: flex; justify-content: space-between; align-items: center; padding: 0 40px;">
+        <p>&copy; 2026 Portium Group. Todos los derechos reservados.</p>
+        <p style="margin: 0;">
+            <a href="{% url 'dashboard_tramites' %}"
+               style="color: #94a3b8; text-decoration: none; font-size: 0.85rem; transition: color 0.2s;"
+               onmouseover="this.style.color='#ffffff'" onmouseout="this.style.color='#94a3b8'">Panel de Operaciones</a>
+        </p>
+    </div>
+</footer>
+{% endif %}
+
+<!-- Boton Flotente de WhatsApp (Se oculta en el Panel de Operaciones y en la vista de gestión) -->
+{% if request.resolver_match.url_name != 'dashboard_tramites' and request.resolver_match.url_name != 'gestionar_tramite' %}
+<a href="https://wa.me/593987792137?text=Hola,%20quiero%20mas%20informacion"
+   class="whatsapp-float"
+   target="_blank"
+   rel="noopener noreferrer">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="WhatsApp-icon">
+</a>
+{% endif %}
+
+<!-- Scripts Globales -->
+<script>
+    function toggleCotizaDropdown(event) {
+        event.stopPropagation();
+        const menu = document.getElementById('cotizaDropdownMenu');
+        if (menu) menu.classList.toggle('show');
+    }
+
+    function toggleEtapasSubmenu(event) {
+        event.stopPropagation();
+        const submenu = document.getElementById('etapasSubmenu');
+        const arrow = document.getElementById('etapasArrow');
+
+        if (submenu && arrow) {
+            if (submenu.style.display === 'block') {
+                submenu.style.display = 'none';
+                arrow.style.transform = 'rotate(0deg)';
+            } else {
+                submenu.style.display = 'block';
+                arrow.style.transform = 'rotate(90deg)';
+            }
+        }
+    }
+
+    window.addEventListener('click', function() {
+        const menu = document.getElementById('cotizaDropdownMenu');
+        if (menu && menu.classList.contains('show')) {
+            menu.classList.remove('show');
+        }
+    });
+</script>
+
+</body>
+</html>

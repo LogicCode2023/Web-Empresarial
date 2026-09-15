@@ -1,0 +1,46 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container" style="max-width: 1000px; margin: 40px auto; padding: 0 20px;">
+    <h2 style="color: #0d2346; margin-bottom: 20px; font-weight: bold;">Mis Trámites Solicitados</h2>
+
+    {% if tramites %}
+        <div style="background: #ffffff; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); overflow: hidden;">
+            <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                <thead>
+                    <tr style="background-color: #0d2346; color: #ffffff;">
+                        <th style="padding: 15px;">Nro. Trámite</th>
+                        <th style="padding: 15px;">Servicio</th>
+                        <th style="padding: 15px;">Fecha</th>
+                        <th style="padding: 15px;">Estado</th>
+                        <th style="padding: 15px; text-align: center;">Acción</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for tramite in tramites %}
+                    <tr style="border-bottom: 1px solid #e2e8f0;">
+                        <td style="padding: 15px; font-weight: 600; color: #1e293b;">#{{ tramite.numero_tramite }}</td>
+                        <td style="padding: 15px; color: #475569;">{{ tramite.get_tipo_tramite_display }}</td>
+                        <td style="padding: 15px; color: #475569;">{{ tramite.fecha_creacion|date:"d/m/Y H:i" }}</td>
+                        <td style="padding: 15px;">
+                            <span style="background-color: #fef3c7; color: #d97706; padding: 4px 10px; border-radius: 12px; font-size: 0.85rem; font-weight: 600;">
+                                {{ tramite.get_estado_display|default:"En Proceso" }}
+                            </span>
+                        </td>
+                        <td style="padding: 15px; text-align: center;">
+                            <a href="{% url 'detalle_tramite_cliente' tramite.numero_tramite %}" style="background-color: #f97316; color: #ffffff; padding: 6px 14px; border-radius: 4px; text-decoration: none; font-size: 0.9rem; font-weight: 500;">Ver Detalle</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div style="background: #ffffff; padding: 40px; text-align: center; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+            <p style="color: #64748b; font-size: 1.1rem; margin-bottom: 20px;">Aún no has registrado ningún trámite en Portium Group.</p>
+            <a href="{% url 'home' %}" style="background-color: #0d2346; color: #ffffff; padding: 10px 20px; border-radius: 4px; text-decoration: none; font-weight: bold;">Comenzar una Cotización</a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

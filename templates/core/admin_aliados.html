@@ -1,0 +1,65 @@
+{% extends 'core/base_admin.html' %}
+{% load static %}
+
+{% block content %}
+<div style="max-width: 1000px; margin: 40px auto; padding: 30px; background: #ffffff; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+
+    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e2e8f0; padding-bottom: 15px; margin-bottom: 25px;">
+        <h2 style="color: #0d2346; margin: 0; font-size: 1.5rem;">Gestión de Empresas Aliadas</h2>
+        <div style="display: flex; gap: 10px;">
+            <a href="{% url 'crear_aliado' %}" style="background-color: #16a34a; color: #ffffff; padding: 10px 16px; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 0.95rem;">
+                + Dar de Alta Nuevo Aliado
+            </a>
+            <a href="{% url 'dashboard_tramites' %}" style="background-color: #64748b; color: #ffffff; padding: 10px 16px; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 0.95rem;">
+                ← Volver a Trámites
+            </a>
+        </div>
+    </div>
+
+    <div style="overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse; text-align: left;">
+            <thead>
+                <tr style="background-color: #f8fafc; border-bottom: 2px solid #cbd5e1; color: #334155;">
+                    <th style="padding: 12px;">Empresa / Agencia</th>
+                    <th style="padding: 12px;">Contacto</th>
+                    <th style="padding: 12px;">Especialidad / Servicio(s)</th>
+                    <th style="padding: 12px;">Correo de Cotizaciones</th>
+                    <th style="padding: 12px;">Estado</th>
+                    <th style="padding: 12px; text-align: center;">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for aliado in aliados %}
+                    <tr style="border-bottom: 1px solid #e2e8f0;">
+                        <td style="padding: 12px; font-weight: 600; color: #0f172a;">{{ aliado.nombre_empresa }}</td>
+                        <td style="padding: 12px; color: #475569;">{{ aliado.contacto|default:"-" }}</td>
+                        <td style="padding: 12px; color: #475569;">
+                            {{ aliado.get_servicios_display }}
+                        </td>
+                        <td style="padding: 12px; color: #475569;">{{ aliado.email }}</td>
+                        <td style="padding: 12px;">
+                            {% if aliado.activo %}
+                                <span style="background: #dcfce7; color: #15803d; padding: 4px 8px; border-radius: 12px; font-size: 0.8rem; font-weight: 600;">Activo</span>
+                            {% else %}
+                                <span style="background: #fee2e2; color: #b91c1c; padding: 4px 8px; border-radius: 12px; font-size: 0.8rem; font-weight: 600;">Anulado</span>
+                            {% endif %}
+                        </td>
+                        <td style="padding: 12px; text-align: center;">
+                            <a href="{% url 'editar_aliado' aliado.id %}" style="background-color: #0284c7; color: #fff; padding: 6px 12px; border-radius: 4px; text-decoration: none; font-size: 0.85rem; margin-right: 5px;">Editar</a>
+                            <a href="{% url 'anular_aliado' aliado.id %}" style="background-color: {% if aliado.activo %}#dc2626{% else %}#16a34a{% endif %}; color: #fff; padding: 6px 12px; border-radius: 4px; text-decoration: none; font-size: 0.85rem;" onclick="return confirm('¿Estás seguro de cambiar el estado de este aliado?');">
+                                {% if aliado.activo %}Anular{% else %}Activar{% endif %}
+                            </a>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="6" style="padding: 30px; text-align: center; color: #64748b; font-style: italic;">
+                            No hay empresas aliadas registradas todavía. Da clic en "Dar de Alta Nuevo Aliado" para agregar la primera.
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

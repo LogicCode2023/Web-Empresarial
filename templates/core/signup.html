@@ -1,0 +1,23 @@
+{% extends 'core/base.html' %}
+
+{% block content %}
+<div class="portium-form-wrapper">
+    <div class="portium-auth-card">
+        <h2>Crear una Cuenta</h2>
+        <p class="subtitle">Regístrate para acceder a Portium Group.</p>
+
+        <form method="post">
+            {% csrf_token %}
+            {{ form.as_p }}
+
+            <button type="submit" class="btn-submit-auth">
+                Registrarse
+            </button>
+        </form>
+
+        <div class="auth-footer-link">
+            <p>¿Ya tienes una cuenta? <a href="{% url 'login' %}">Inicia sesión aquí</a></p>
+        </div>
+    </div>
+</div>
+{% endblock %}

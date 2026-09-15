@@ -1,0 +1,131 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solicitud de Representación en China | Portium Group</title>
+    <link rel="stylesheet" href="{% static 'core/css/styles.css' %}">
+</head>
+<body style="background-color: #f8fafc;">
+
+    <!-- Header Minimalista -->
+    <header class="minimal-header">
+        <a href="{% url 'home' %}" class="minimal-logo">
+            <img src="{% static 'core/img/logo-portium.png' %}" alt="Portium Group">
+        </a>
+        <a href="javascript:history.back();" class="btn-cancel">&times; Cancelar y Volver</a>
+    </header>
+
+    <!-- Contenedor del Formulario Multipaso -->
+    <div class="form-container">
+        <div class="form-card">
+            <h2 class="form-title">Representación y Distribución Oficial</h2>
+            <p class="form-subtitle">Conéctate directamente con fábricas en China para comercializar marcas exclusivas en Ecuador.</p>
+
+            <form id="representacionForm" method="POST" enctype="multipart/form-data" action="{% url 'solicitud_representacion' %}">
+                {% csrf_token %}
+
+                <!-- PASO 1: Datos de la Empresa y Canales en Ecuador -->
+                <div id="step-1" class="form-step active-step">
+                    <div class="step-indicator">Paso 1 de 2: Perfil de tu Empresa en Ecuador</div>
+
+                    <!-- Bloque condicional: Solo se pide correo y nombre si el usuario es anónimo -->
+                    {% if not request.user.is_authenticated %}
+                    <div class="input-group">
+                        <label for="email">Correo Electrónico (Obligatorio) *</label>
+                        <input type="email" id="email" name="email" placeholder="Ej: correo@ejemplo.com" required style="width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 1rem;">
+                    </div>
+                    {% endif %}
+
+                    <div class="input-group">
+                        <label for="nombre">Tu Nombre o Razón Social *</label>
+                        <input type="text" id="nombre" name="nombre" placeholder="Ej: Importadora Global S.A." required>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="whatsapp">Teléfono / WhatsApp de contacto *</label>
+                        <input type="tel" id="whatsapp" name="whatsapp" placeholder="Ej: +593 99 123 4567" required>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="canales_venta">¿Qué canales de distribución manejas actualmente? *</label>
+                        <select id="canales_venta" name="canales_venta" required>
+                            <option value="" disabled selected>Selecciona tu canal principal</option>
+                            <option value="Mayorista y Distribuidores">Red de distribuidores mayoristas</option>
+                            <option value="Retail y Tiendas Físicas">Locales comerciales / Tiendas físicas</option>
+                            <option value="Ecommerce y Redes">Comercio electrónico (E-commerce) y redes</option>
+                            <option value="Nuevo Emprendimiento">Estoy estructurando mi canal de distribución</option>
+                        </select>
+                    </div>
+
+                    <button type="button" class="btn-primary" onclick="goToStep2()">Continuar a Datos del Fabricante &rarr;</button>
+                </div>
+
+                <!-- PASO 2: Marca, Exclusividad y Proyección -->
+                <div id="step-2" class="form-step hidden-step">
+                    <div class="step-indicator">Paso 2 de 2: Marca y Expectativa Comercial</div>
+
+                    <div class="input-group">
+                        <label for="marca_china">Nombre de la Fábrica o Marca en China *</label>
+                        <input type="text" id="marca_china" name="marca_china" placeholder="Ej: Marca específica o categoría industrial" required>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="alcance_exclusividad">Alcance de representación deseado *</label>
+                        <select id="alcance_exclusividad" name="alcance_exclusividad" required>
+                            <option value="" disabled selected>Selecciona el tipo de exclusividad</option>
+                            <option value="Exclusivo Ecuador">Exclusividad total para todo el Ecuador</option>
+                            <option value="Exclusivo Regional">Exclusividad por regiones o provincias</option>
+                            <option value="Distribucion Comercial">Distribución comercial sin exclusividad inicial</option>
+                        </select>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="proyeccion_anual">Proyección estimada de compra anual (USD)</label>
+                        <input type="text" id="proyeccion_anual" name="proyeccion_anual" placeholder="Ej: $50,000 - $100,000 (Opcional)">
+                    </div>
+
+                    <div class="button-group">
+                        <button type="button" class="btn-secondary" onclick="goToStep1()">&larr; Volver</button>
+                        <button type="submit" class="btn-primary">Enviar Solicitud de Representación</button>
+                    </div>
+                </div>
+
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function goToStep2() {
+          const nombre = document.getElementById('nombre');
+          const whatsapp = document.getElementById('whatsapp');
+          const canales = document.getElementById('canales_venta');
+          const email = document.getElementById('email');
+
+          // Validamos primero el correo si el usuario es anónimo y el campo está visible
+          if (email && !email.checkValidity()) {
+            document.getElementById('representacionForm').reportValidity();
+            return;
+          }
+
+          if (!nombre.checkValidity() || !whatsapp.checkValidity() || !canales.checkValidity()) {
+            document.getElementById('representacionForm').reportValidity();
+            return;
+          }
+
+          document.getElementById('step-1').classList.remove('active-step');
+          document.getElementById('step-1').classList.add('hidden-step');
+          document.getElementById('step-2').classList.remove('hidden-step');
+          document.getElementById('step-2').classList.add('active-step');
+        }
+
+        function goToStep1() {
+          document.getElementById('step-2').classList.remove('active-step');
+          document.getElementById('step-2').classList.add('hidden-step');
+          document.getElementById('step-1').classList.remove('hidden-step');
+          document.getElementById('step-1').classList.add('active-step');
+        }
+    </script>
+</body>
+</html>

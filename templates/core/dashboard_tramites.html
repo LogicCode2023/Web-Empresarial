@@ -1,0 +1,120 @@
+{% extends 'core/base_admin.html' %}
+{% load static %}
+
+{% block content %}
+<div style="max-width: 1200px; margin: 30px auto; padding: 0 20px; font-family: inherit;">
+
+    <h2 style="color: #0d2346; font-size: 1.8rem; font-weight: 700; margin-bottom: 20px;">
+        Gestión Integral de Trámites
+    </h2>
+
+    <div style="display: grid; grid-template-columns: 260px 1fr; gap: 25px;">
+
+        <!-- BARRA LATERAL DE FILTROS (Estilo Admin nativo pero mejorado) -->
+        <aside style="background: #1e293b; color: #f8fafc; padding: 20px; border-radius: 12px; height: fit-content;">
+            <h3 style="font-size: 1rem; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #334155; padding-bottom: 10px; margin-top: 0; color: #38bdf8;">
+                Filtros
+            </h3>
+
+            <form method="GET" id="filter-form">
+
+                <!-- Por Cliente -->
+                <div style="margin-bottom: 15px;">
+                    <label style="font-size: 0.85rem; color: #94a3b8; display: block; margin-bottom: 5px;">Por Cliente</label>
+                    <select name="cliente" onchange="this.form.submit()" style="width: 100%; padding: 8px; border-radius: 6px; background: #0f172a; color: #fff; border: 1px solid #334155;">
+                        <option value="">Todos los clientes</option>
+                        {% for c in clientes %}
+                            <option value="{{ c.id }}" {% if selected_cliente == c.id|stringformat:"s" %}selected{% endif %}>{{ c.username }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Por Tipo de Servicio -->
+                <div style="margin-bottom: 15px;">
+                    <label style="font-size: 0.85rem; color: #94a3b8; display: block; margin-bottom: 5px;">Por Tipo Servicio</label>
+                    <select name="tipo_servicio" onchange="this.form.submit()" style="width: 100%; padding: 8px; border-radius: 6px; background: #0f172a; color: #fff; border: 1px solid #334155;">
+                        <option value="">Todo</option>
+                        <option value="busqueda" {% if selected_tipo == 'busqueda' %}selected{% endif %}>Búsqueda de Fábrica</option>
+                        <option value="asesoria" {% if selected_tipo == 'asesoria' %}selected{% endif %}>Asesoría y Validación</option>
+                        <option value="logistica" {% if selected_tipo == 'logistica' %}selected{% endif %}>Logística Internacional</option>
+                        <option value="nacionalizacion" {% if selected_tipo == 'nacionalizacion' %}selected{% endif %}>Nacionalización y Aduanas</option>
+                    </select>
+                </div>
+
+                <!-- Por Estado -->
+                <div style="margin-bottom: 15px;">
+                    <label style="font-size: 0.85rem; color: #94a3b8; display: block; margin-bottom: 5px;">Por Estado</label>
+                    <select name="estado" onchange="this.form.submit()" style="width: 100%; padding: 8px; border-radius: 6px; background: #0f172a; color: #fff; border: 1px solid #334155;">
+                        <option value="">Todo</option>
+                        <option value="pendiente" {% if selected_estado == 'pendiente' %}selected{% endif %}>Pendiente de Revisión</option>
+                        <option value="proceso" {% if selected_estado == 'proceso' %}selected{% endif %}>En Proceso</option>
+                        <option value="completado" {% if selected_estado == 'completado' %}selected{% endif %}>Completado</option>
+                    </select>
+                </div>
+
+                <!-- Por Fecha -->
+                <div style="margin-bottom: 15px;">
+                    <label style="font-size: 0.85rem; color: #94a3b8; display: block; margin-bottom: 5px;">Por Fecha Creación</label>
+                    <select name="fecha" onchange="this.form.submit()" style="width: 100%; padding: 8px; border-radius: 6px; background: #0f172a; color: #fff; border: 1px solid #334155;">
+                        <option value="">Cualquier fecha</option>
+                        <option value="hoy" {% if selected_fecha == 'hoy' %}selected{% endif %}>Hoy</option>
+                        <option value="7dias" {% if selected_fecha == '7dias' %}selected{% endif %}>Últimos 7 días</option>
+                        <option value="mes" {% if selected_fecha == 'mes' %}selected{% endif %}>Este mes</option>
+                        <option value="anio" {% if selected_fecha == 'anio' %}selected{% endif %}>Este año</option>
+                    </select>
+                </div>
+
+                {% if selected_cliente or selected_tipo or selected_estado or selected_fecha %}
+                    <a href="{% url 'dashboard_tramites' %}" style="display: block; text-align: center; margin-top: 15px; color: #f97316; font-size: 0.85rem; text-decoration: none;">Limpiar filtros</a>
+                {% endif %}
+            </form>
+        </aside>
+
+        <!-- CONTENIDO PRINCIPAL (LISTADO DE TRÁMITES) -->
+        <main style="background: #ffffff; padding: 25px; border-radius: 12px; box-shadow: 0 4px 25px rgba(0,0,0,0.04);">
+            <div style="overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                    <thead>
+                        <tr style="background: #f8fafc; color: #64748b; font-size: 0.85rem; text-transform: uppercase; border-bottom: 2px solid #e2e8f0;">
+                            <th style="padding: 12px;">Nº Trámite</th>
+                            <th style="padding: 12px;">Cliente</th>
+                            <th style="padding: 12px;">Tipo Servicio</th>
+                            <th style="padding: 12px;">Estado</th>
+                            <th style="padding: 12px;">Fecha</th>
+                            <th style="padding: 12px; text-align: center;">Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for t in tramites %}
+                            <tr style="border-bottom: 1px solid #e2e8f0; font-size: 0.95rem; color: #1e293b;">
+                                <td style="padding: 14px; font-weight: 700; color: #ea580c;">{{ t.numero_tramite }}</td>
+                                <td style="padding: 14px; font-weight: 600;">{{ t.cliente.username }}</td>
+                                <td style="padding: 14px;">{{ t.get_tipo_servicio_display }}</td>
+                                <td style="padding: 14px;">
+                                    <span style="background: #f1f5f9; color: #334155; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 600;">
+                                        {{ t.get_estado_display }}
+                                    </span>
+                                </td>
+                                <td style="padding: 14px; color: #64748b; font-size: 0.85rem;">{{ t.fecha_creacion|date:"d M Y, H:i" }}</td>
+                                <td style="padding: 14px; text-align: center;">
+                                    <a href="{% url 'gestionar_tramite' t.id %}"
+                                       style="background: #0d2346; color: #fff; padding: 6px 12px; border-radius: 6px; text-decoration: none; font-size: 0.85rem; font-weight: 600;">
+                                        Gestionar
+                                    </a>
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="6" style="text-align: center; padding: 40px; color: #64748b;">
+                                    No hay trámites que coincidan con los filtros seleccionados.
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </main>
+
+    </div>
+</div>
+{% endblock %}

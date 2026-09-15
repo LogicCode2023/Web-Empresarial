@@ -1,0 +1,144 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solicitud de Búsqueda de Fábrica | Portium Group</title>
+    <link rel="stylesheet" href="{% static 'core/css/styles.css' %}">
+</head>
+<body style="background-color: #f8fafc;">
+
+    <!-- Header Minimalista (Solo Logo y Botón Volver) -->
+    <header class="minimal-header">
+        <a href="{% url 'home' %}" class="minimal-logo">
+            <img src="{% static 'core/img/logo-portium.png' %}" alt="Portium Group">
+        </a>
+        <a href="javascript:history.back();" class="btn-cancel">&times; Cancelar y Volver</a>
+    </header>
+
+    <!-- Contenedor del Formulario Multipaso -->
+    <div class="form-container">
+        <div class="form-card">
+            <h2 class="form-title">Solicitud de Búsqueda de Fábrica</h2>
+            <p class="form-subtitle">Buscamos directo con el fabricante en China sin intermediarios.</p>
+
+            <form id="sourcingForm" method="POST" enctype="multipart/form-data" action="{% url 'solicitud_busqueda' %}">
+                {% csrf_token %}
+
+                <!-- PASO 1: Captura Rápida -->
+                <div id="step-1" class="form-step active-step">
+                    <div class="step-indicator">Paso 1 de 2: Información Básica</div>
+
+                    <!-- Bloque condicional: Solo se pide correo y nombre si el usuario es anónimo -->
+                    {% if not request.user.is_authenticated %}
+                    <div class="input-group">
+                        <label for="email">Correo Electrónico (Obligatorio) *</label>
+                        <input type="email" id="email" name="email" placeholder="Ej: correo@ejemplo.com" required style="width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 1rem;">
+                    </div>
+                    {% endif %}
+
+                    <div class="input-group">
+                        <label for="producto">Producto que deseas buscar *</label>
+                        <input type="text" id="producto" name="producto" value="{{ producto_inicial }}" placeholder="Ej: Repuestos de suspensión" required>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="marca">Marca de referencia / aplicación</label>
+                        <input type="text" id="marca" name="marca" placeholder="Ej: Chevrolet, Toyota, Genérico (Opcional)">
+                    </div>
+
+                    <div class="input-group">
+                        <label for="nombre">Tu Nombre o Razón Social *</label>
+                        <input type="text" id="nombre" name="nombre" placeholder="Ej: Juan Pérez" required>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="whatsapp">Teléfono / WhatsApp de contacto *</label>
+                        <input type="tel" id="whatsapp" name="whatsapp" placeholder="Ej: +593 99 123 4567" required>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="experiencia">¿Has importado anteriormente? *</label>
+                        <select id="experiencia" name="experiencia" required>
+                            <option value="" disabled selected>Selecciona una opción</option>
+                            <option value="Nunca">Nunca, quiero iniciar mi primera importación</option>
+                            <option value="Pocas veces">Sí, pocas veces</option>
+                            <option value="Importador Frecuente">Sí, soy importador frecuente</option>
+                        </select>
+                    </div>
+
+                    <button type="button" class="btn-primary" onclick="goToStep2()">Continuar a Referencias de Fábrica &rarr;</button>
+                </div>
+
+                <!-- PASO 2: Especificaciones y Referencias -->
+                <div id="step-2" class="form-step hidden-step">
+                    <div class="step-indicator">Paso 2 de 2: Detalles Técnicos y Referencias</div>
+
+                    <div class="input-group">
+                        <label for="link_referencia">Link de Referencia de Producto</label>
+                        <input type="url" id="link_referencia" name="link_referencia" placeholder="https://ejemplo.com/producto (Opcional)">
+                    </div>
+
+                    <div class="input-group">
+                        <label for="imagen_referencia">Foto / Ficha Técnica del Producto</label>
+                        <input type="file" id="imagen_referencia" name="imagen_referencia" accept="image/*,.pdf">
+                        <small class="help-text">Puedes subir fotos, catálogos o archivos PDF (Opcional).</small>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="cantidad">Cantidad Estimada para Primer Pedido</label>
+                        <input type="text" id="cantidad" name="cantidad" placeholder="Ej: 500 unidades / 10 cajas (Opcional)">
+                    </div>
+
+                    <div class="input-group">
+                        <label for="detalles">Especificaciones o Notas Adicionales</label>
+                        <textarea id="detalles" name="detalles" rows="3" placeholder="Detalla materiales, dimensiones, colores o empaque especial (Opcional)"></textarea>
+                    </div>
+
+                    <div class="button-group">
+                        <button type="button" class="btn-secondary" onclick="goToStep1()">&larr; Volver</button>
+                        <button type="submit" class="btn-primary">Enviar Solicitud a China</button>
+                    </div>
+                </div>
+
+            </form>
+        </div>
+    </div>
+
+    <!-- Script de Cambio de Pasos -->
+    <script>
+        function goToStep2() {
+          const producto = document.getElementById('producto');
+          const nombre = document.getElementById('nombre');
+          const whatsapp = document.getElementById('whatsapp');
+          const experiencia = document.getElementById('experiencia');
+          const email = document.getElementById('email');
+
+          // Validamos primero el correo si el usuario es anónimo y el campo está visible
+          if (email && !email.checkValidity()) {
+            document.getElementById('sourcingForm').reportValidity();
+            return;
+          }
+
+          if (!producto.checkValidity() || !nombre.checkValidity() || !whatsapp.checkValidity() || !experiencia.checkValidity()) {
+            document.getElementById('sourcingForm').reportValidity();
+            return;
+          }
+
+          document.getElementById('step-1').classList.remove('active-step');
+          document.getElementById('step-1').classList.add('hidden-step');
+          document.getElementById('step-2').classList.remove('hidden-step');
+          document.getElementById('step-2').classList.add('active-step');
+        }
+
+        function goToStep1() {
+          document.getElementById('step-2').classList.remove('active-step');
+          document.getElementById('step-2').classList.add('hidden-step');
+          document.getElementById('step-1').classList.remove('hidden-step');
+          document.getElementById('step-1').classList.add('active-step');
+        }
+    </script>
+</body>
+</html>
+

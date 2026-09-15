@@ -1,0 +1,55 @@
+{% extends 'core/base.html' %}
+{% block content %}
+<div style="max-width: 1200px; margin: 60px auto; padding: 0 20px; font-family: inherit;">
+    <div style="text-align: center; margin-bottom: 50px;">
+        <h1 style="color: #0f172a; font-size: 2.2rem; margin-bottom: 10px;">Servicios de Importación por Etapas</h1>
+        <p style="color: #64748b; font-size: 1.1rem;">Selecciona el servicio específico en el que necesitas apoyo para continuar con tu cotización:</p>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 25px;">
+        <!-- Tarjeta 1: Logística -->
+        <div style="background: #0d2346; border-radius: 12px; padding: 35px 25px; text-align: center; box-shadow: 0 10px 20px rgba(13, 35, 70, 0.2); display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+                <h3 style="color: #ffffff; font-size: 1.25rem; margin-bottom: 15px; line-height: 1.4;">Logística Internacional</h3>
+                <p style="color: #cbd5e1; font-size: 0.95rem; margin-bottom: 25px; line-height: 1.5;">Gestión de fletes marítimos y aéreos seguros desde origen.</p>
+            </div>
+            <div>
+                <a href="{% url 'crear_tramite' 'logistica' %}" style="background: #f97316; color: white; padding: 12px 24px; border-radius: 6px; text-decoration: none; display: inline-block; font-weight: bold; transition: background 0.2s;" onmouseover="this.style.backgroundColor='#ea580c'" onmouseout="this.style.backgroundColor='#f97316'">Seleccionar</a>
+            </div>
+        </div>
+
+        <!-- Tarjeta 2: Nacionalización -->
+        <div style="background: #0d2346; border-radius: 12px; padding: 35px 25px; text-align: center; box-shadow: 0 10px 20px rgba(13, 35, 70, 0.2); display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+                <h3 style="color: #ffffff; font-size: 1.25rem; margin-bottom: 15px; line-height: 1.4;">Nacionalización</h3>
+                <p style="color: #cbd5e1; font-size: 0.95rem; margin-bottom: 25px; line-height: 1.5;">Desaduanización y trámites legales ante las entidades de control.</p>
+            </div>
+            <div>
+                <a href="{% url 'crear_tramite' 'nacionalizacion' %}" style="background: #f97316; color: white; padding: 12px 24px; border-radius: 6px; text-decoration: none; display: inline-block; font-weight: bold; transition: background 0.2s;" onmouseover="this.style.backgroundColor='#ea580c'" onmouseout="this.style.backgroundColor='#f97316'">Seleccionar</a>
+            </div>
+        </div>
+
+        <!-- Tarjeta 3: Inspección -->
+        <div style="background: #0d2346; border-radius: 12px; padding: 35px 25px; text-align: center; box-shadow: 0 10px 20px rgba(13, 35, 70, 0.2); display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+                <h3 style="color: #ffffff; font-size: 1.25rem; margin-bottom: 15px; line-height: 1.4;">Inspección en Origen</h3>
+                <p style="color: #cbd5e1; font-size: 0.95rem; margin-bottom: 25px; line-height: 1.5;">Control de calidad y verificación de mercancía directo en China.</p>
+            </div>
+            <div>
+                <a href="{% url 'crear_tramite' 'inspeccion' %}" style="background: #f97316; color: white; padding: 12px 24px; border-radius: 6px; text-decoration: none; display: inline-block; font-weight: bold; transition: background 0.2s;" onmouseover="this.style.backgroundColor='#ea580c'" onmouseout="this.style.backgroundColor='#f97316'">Seleccionar</a>
+            </div>
+        </div>
+
+        <!-- Tarjeta 4: Transporte Local -->
+        <div style="background: #0d2346; border-radius: 12px; padding: 35px 25px; text-align: center; box-shadow: 0 10px 20px rgba(13, 35, 70, 0.2); display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+                <h3 style="color: #ffffff; font-size: 1.25rem; margin-bottom: 15px; line-height: 1.4;">Transporte Local</h3>
+                <p style="color: #cbd5e1; font-size: 0.95rem; margin-bottom: 25px; line-height: 1.5;">Entrega final de carga directamente en tus bodegas o almacén.</p>
+            </div>
+            <div>
+                <a href="{% url 'crear_tramite' 'transporte_local' %}" style="background: #f97316; color: white; padding: 12px 24px; border-radius: 6px; text-decoration: none; display: inline-block; font-weight: bold; transition: background 0.2s;" onmouseover="this.style.backgroundColor='#ea580c'" onmouseout="this.style.backgroundColor='#f97316'">Seleccionar</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
