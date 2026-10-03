@@ -8,12 +8,15 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.contrib.auth.views import LoginView
 from django.core.mail import EmailMessage, send_mail
+from django.forms import inlineformset_factory
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
 from .forms import (
+    AliadoEstrategicoForm,
     AsesoriaComprasForm,
     BusquedaFabricaForm,
+    ContactoAliadoForm,
     InspeccionForm,
     LogisticaForm,
     NacionalizacionForm,
@@ -21,7 +24,16 @@ from .forms import (
     RepresentacionForm,
     TransporteLocalForm,
 )
-from .models import AliadoEstrategico, Tramite, HistorialDocumentoTrámite
+from .models import AliadoEstrategico, ContactoAliado, HistorialDocumentoTrámite, Tramite
+
+# Definición del formset para gestionar los contactos múltiples de cada aliado
+ContactoAliadoFormSet = inlineformset_factory(
+    AliadoEstrategico,
+    ContactoAliado,
+    form=ContactoAliadoForm,
+    extra=1,
+    can_delete=True
+)
 
 
 # Create your views here.
@@ -244,107 +256,114 @@ class CustomLoginView(LoginView):
 
 @staff_member_required
 def gestionar_tramite_view(request, tramite_id):
-  tramite = get_object_or_404(Tramite, id=tramite_id)
+    tramite = get_object_or_404(Tramite, id=tramite_id)
 
-  # Filtrar aliados usando lookups para que coincida con la lista servicios_ofrecidos
-  aliados_disponibles = AliadoEstrategico.objects.filter(
-      tipo_servicio__contains=[tramite.tipo_servicio], activo=True
-  )
+    # Filtrar aliados usando campos booleanos o la estructura que maneje tu modelo actual de AliadoEstrategico
+    # Ejemplo dinámico según la especialidad del trámite:
+    filtro_especialidad = {f'especialidad_{tramite.tipo_servicio}': True} if hasattr(AliadoEstrategico,
+                                                                                     f'especialidad_{tramite.tipo_servicio}') else {}
+    aliados_disponibles = AliadoEstrategico.objects.filter(activo=True,
+                                                           **filtro_especialidad) if filtro_especialidad else AliadoEstrategico.objects.filter(
+        activo=True)
 
-  if request.method == 'POST':
-    nuevo_estado = request.POST.get('estado')
-    if nuevo_estado:
-      tramite.estado = nuevo_estado
+    if request.method == 'POST':
+        nuevo_estado = request.POST.get('estado')
+        if nuevo_estado:
+            tramite.estado = nuevo_estado
 
-    aliados_seleccionados_ids = request.POST.getlist('aliados_seleccionados')
+        aliados_seleccionados_ids = request.POST.getlist('aliados_seleccionados')
 
-    if aliados_seleccionados_ids:
-      aliados_a_cotizar = AliadoEstrategico.objects.filter(
-          id__in=aliados_seleccionados_ids, activo=True
-      )
+        if aliados_seleccionados_ids:
+            aliados_a_cotizar = AliadoEstrategico.objects.filter(
+                id__in=aliados_seleccionados_ids, activo=True
+            )
 
-      if aliados_a_cotizar.exists():
-        tramite.aliado_asignado = aliados_a_cotizar.first()
+            if aliados_a_cotizar.exists():
+                tramite.aliado_asignado = aliados_a_cotizar.first()
 
-      correos_enviados = 0
+            correos_enviados = 0
 
-      for aliado in aliados_a_cotizar:
-        if not aliado.email:
-          continue
+            for aliado in aliados_a_cotizar:
+                # Obtenemos los correos mediante sus contactos o campo directo si existiera
+                correos_destinatarios = list(aliado.contactos.values_list('correo_cotizaciones', flat=True))
+                if not correos_destinatarios and hasattr(aliado, 'email') and aliado.email:
+                    correos_destinatarios = [aliado.email]
 
-        asunto = f'Nueva Solicitud de Cotización - Trámite {tramite.numero_tramite}'
-        cuerpo = (
-            f'Estimado equipo de {aliado.nombre_empresa},\n\n'
-            f'Tenemos una nueva solicitud de servicio '
-            f'({tramite.get_tipo_servicio_display()}) '
-            f'que requiere su cotización con el margen acordado.\n\n'
-            f'Código de Trámite: {tramite.numero_tramite}\n'
-            f'Cliente: {tramite.cliente.get_full_name() or tramite.cliente.username} '
-            f'({tramite.cliente.email})\n\n'
-            f'Por favor revisar los documentos adjuntos para emitir la cotización correspondiente.\n\n'
-            f'Atentamente,\nEquipo de Operaciones - Portium Group'
-        )
+                if not correos_destinatarios:
+                    continue
 
-        email_msg = EmailMessage(
-            subject=asunto,
-            body=cuerpo,
-            from_email=None,  # Utiliza DEFAULT_FROM_EMAIL del settings.py
-            to=[aliado.email],
-        )
+                asunto = f'Nueva Solicitud de Cotización - Trámite {tramite.numero_tramite}'
+                cuerpo = (
+                    f'Estimado equipo de {aliado.nombre_agencia},\n\n'
+                    f'Tenemos una nueva solicitud de servicio '
+                    f'({tramite.get_tipo_servicio_display()}) '
+                    f'que requiere su cotización con el margen acordado.\n\n'
+                    f'Código de Trámite: {tramite.numero_tramite}\n'
+                    f'Cliente: {tramite.cliente.get_full_name() or tramite.cliente.username} '
+                    f'({tramite.cliente.email})\n\n'
+                    f'Por favor revisar los documentos adjuntos para emitir la cotización correspondiente.\n\n'
+                    f'Atentamente,\nEquipo de Operaciones - Portium Group'
+                )
 
-        try:
-          posibles_detalles = [
-              getattr(tramite, 'detalle_busqueda', None),
-              getattr(tramite, 'detalle_asesoria', None),
-              getattr(tramite, 'detalle_logistica', None),
-              getattr(tramite, 'detalle_nacionalizacion', None),
-              getattr(tramite, 'detalle_inspeccion', None),
-              getattr(tramite, 'detalle_transporte', None),
-              getattr(tramite, 'detalle_representacion', None),
-          ]
+                email_msg = EmailMessage(
+                    subject=asunto,
+                    body=cuerpo,
+                    from_email=None,
+                    to=correos_destinatarios,
+                )
 
-          for rel in posibles_detalles:
-            if rel and hasattr(rel, 'archivo_adjunto') and rel.archivo_adjunto:
-              # Usar .read() directo de Django FieldFile previene errores de apertura en disco
-              file_name = rel.archivo_adjunto.name.split('/')[-1]
-              file_content = rel.archivo_adjunto.read()
-              if file_content:
-                email_msg.attach(file_name, file_content)
-              break
-        except Exception as e:
-          print(f'Aviso: No se pudo adjuntar archivo para {aliado.nombre_empresa}:', e)
+                try:
+                    posibles_detalles = [
+                        getattr(tramite, 'detalle_busqueda', None),
+                        getattr(tramite, 'detalle_asesoria', None),
+                        getattr(tramite, 'detalle_logistica', None),
+                        getattr(tramite, 'detalle_nacionalizacion', None),
+                        getattr(tramite, 'detalle_inspeccion', None),
+                        getattr(tramite, 'detalle_transporte', None),
+                        getattr(tramite, 'detalle_representacion', None),
+                    ]
 
-        try:
-          email_msg.send(fail_silently=False)
-          correos_enviados += 1
-        except Exception as e:
-          print(f'Error enviando correo a {aliado.email}:', e)
+                    for rel in posibles_detalles:
+                        if rel and hasattr(rel, 'archivo_adjunto') and rel.archivo_adjunto:
+                            file_name = rel.archivo_adjunto.name.split('/')[-1]
+                            file_content = rel.archivo_adjunto.read()
+                            if file_content:
+                                email_msg.attach(file_name, file_content)
+                            break
+                except Exception as e:
+                    print(f'Aviso: No se pudo adjuntar archivo para {aliado.nombre_agencia}:', e)
 
-      if correos_enviados > 0:
-        tramite.enviado_a_aliado = True
-        tramite.fecha_envio_aliado = timezone.now()
-        messages.success(
-            request,
-            f'¡Trámite actualizado y correo(s) enviado(s) con éxito a {correos_enviados} aliado(s)!',
-        )
-      else:
-        messages.warning(
-            request,
-            'Se guardaron los cambios, pero no se pudo enviar ningún correo (verifique los emails de los aliados).',
-        )
-    else:
-      messages.success(
-          request, '¡Cambios y estado del trámite guardados exitosamente!'
-      )
+                try:
+                    email_msg.send(fail_silently=False)
+                    correos_enviados += 1
+                except Exception as e:
+                    print(f'Error enviando correo a {aliado.nombre_agencia}:', e)
 
-    tramite.save()
-    return redirect('gestionar_tramite', tramite_id=tramite.id)
+            if correos_enviados > 0:
+                tramite.enviado_a_aliado = True
+                tramite.fecha_envio_aliado = timezone.now()
+                messages.success(
+                    request,
+                    f'¡Trámite actualizado y correo(s) enviado(s) con éxito a {correos_enviados} aliado(s)!',
+                )
+            else:
+                messages.warning(
+                    request,
+                    'Se guardaron los cambios, pero no se pudo enviar ningún correo (verifique los emails de los contactos).',
+                )
+        else:
+            messages.success(
+                request, '¡Cambios y estado del trámite guardados exitosamente!'
+            )
 
-  context = {
-      'tramite': tramite,
-      'aliados_disponibles': aliados_disponibles,
-  }
-  return render(request, 'core/gestionar_tramite.html', context)
+        tramite.save()
+        return redirect('gestionar_tramite', tramite_id=tramite.id)
+
+    context = {
+        'tramite': tramite,
+        'aliados_disponibles': aliados_disponibles,
+    }
+    return render(request, 'core/gestionar_tramite.html', context)
 
 
 # --- MÓDULO DE ALIADOS ESTRATÉGICOS (Protegidos con staff_member_required) ---
@@ -358,13 +377,13 @@ def lista_aliados(request):
 
 @staff_member_required
 def crear_aliado(request):
-    """Permite registrar un nuevo aliado reutilizando la lógica unificada"""
+    """Permite registrar un nuevo aliado con sus contactos"""
     return guardar_aliado(request, pk=None)
 
 
 @staff_member_required
 def editar_aliado(request, pk):
-    """Permite editar un aliado existente reutilizando la lógica unificada"""
+    """Permite editar un aliado existente y sus contactos"""
     return guardar_aliado(request, pk=pk)
 
 
@@ -374,33 +393,39 @@ def anular_aliado(request, pk):
     aliado = get_object_or_404(AliadoEstrategico, pk=pk)
     aliado.activo = not aliado.activo
     aliado.save()
+    messages.success(request, f"El estado de la agencia '{aliado.nombre_agencia}' ha sido actualizado.")
     return redirect('lista_aliados')
 
 
 @staff_member_required
 def guardar_aliado(request, pk=None):
-    # Lógica para obtener el aliado si se está editando, o crear uno nuevo
+    """Lógica unificada para crear o editar un aliado estratégico junto a su formset de contactos"""
     aliado = get_object_or_404(AliadoEstrategico, pk=pk) if pk else AliadoEstrategico()
 
     if request.method == 'POST':
-        aliado.nombre_empresa = request.POST.get('nombre_empresa')
-        aliado.contacto = request.POST.get('contacto')
-        aliado.email = request.POST.get('email')
-        aliado.telefono = request.POST.get('telefono')
+        form = AliadoEstrategicoForm(request.POST, instance=aliado)
+        formset = ContactoAliadoFormSet(request.POST, instance=aliado)
 
-        # Captura todos los checkboxes seleccionados como una lista de Python
-        aliado.tipo_servicio = request.POST.getlist('servicios_ofrecidos')
+        if form.is_valid() and formset.is_valid():
+            aliado_guardado = form.save()
+            formset.save()
 
-        if not pk:
-            aliado.activo = True
+            if not pk:
+                aliado_guardado.activo = True
+                aliado_guardado.save()
 
-        aliado.save()
-        return redirect('lista_aliados')
+            messages.success(request, "¡Empresa aliada y contactos guardados exitosamente!")
+            return redirect('lista_aliados')
+        else:
+            messages.error(request, "Por favor, corrija los errores en el formulario.")
+    else:
+        form = AliadoEstrategicoForm(instance=aliado)
+        formset = ContactoAliadoFormSet(instance=aliado)
 
-    # Contexto para enviar las opciones al template
     context = {
+        'form': form,
+        'formset': formset,
         'aliado': aliado,
-        'tipo_servicio_choices': AliadoEstrategico.TIPO_SERVICIO_CHOICES,
         'accion': 'Editar' if pk else 'Crear'
     }
     return render(request, 'core/form_aliado.html', context)
@@ -410,41 +435,42 @@ def enviar_cotizacion_aliados(request, tramite_id):
     tramite = get_object_or_404(Tramite, id=tramite_id)
 
     if request.method == 'POST':
-        # Capturamos los IDs de los aliados seleccionados en los checkboxes del formulario
-        aliados_ids = request.POST.getlist(
-            'aliados_seleccionados')  # Asegúrate de que el name del checkbox en tu HTML sea este
+        aliados_ids = request.POST.getlist('aliados_seleccionados')
 
         if not aliados_ids:
             messages.warning(request, "Por favor, selecciona al menos un aliado estratégico.")
-            return redirect('detalle_tramite', pk=tramite_id)  # Ajusta tu URL de redirección
+            return redirect('detalle_tramite', pk=tramite_id)
 
         aliados = AliadoEstrategico.objects.filter(id__in=aliados_ids)
 
-        # Preparamos los datos del correo
         asunto = f"Nuevo Requerimiento de Cotización - Trámite #{tramite.id}"
         mensaje = (
             f"Estimado equipo,\n\n"
             f"Se ha generado un nuevo requerimiento para cotización asociado al trámite.\n"
             f"Detalles del trámite:\n"
-            f"- Descripción/Uso: {tramite.uso_aplicacion}\n"
-            f"- Valor FOB: {tramite.valor_fob}\n"
-            f"- Régimen: {tramite.tipo_regimen}\n\n"
             f"Por favor, ingresar al sistema para revisar los archivos adjuntos y proceder con la cotización.\n\n"
             f"Atentamente,\nPanel Operativo"
         )
 
-        destinatarios = [aliado.email for aliado in aliados if aliado.email]
+        destinatarios = []
+        for aliado in aliados:
+            emails_aliado = list(aliado.contactos.values_list('correo_cotizaciones', flat=True))
+            if not emails_aliado and hasattr(aliado, 'email') and aliado.email:
+                emails_aliado = [aliado.email]
+            destinatarios.extend(emails_aliado)
 
         try:
-            # Envío masivo o individual de correos
-            send_mail(
-                subject=asunto,
-                message=mensaje,
-                from_email=None,  # Utiliza DEFAULT_FROM_EMAIL
-                recipient_list=destinatarios,
-                fail_silently=False,
-            )
-            messages.success(request, "¡Requerimiento enviado exitosamente a los aliados seleccionados!")
+            if destinatarios:
+                send_mail(
+                    subject=asunto,
+                    message=mensaje,
+                    from_email=None,
+                    recipient_list=destinatarios,
+                    fail_silently=False,
+                )
+                messages.success(request, "¡Requerimiento enviado exitosamente a los aliados seleccionados!")
+            else:
+                messages.warning(request, "Los aliados seleccionados no tienen correos de contacto registrados.")
         except Exception as e:
             messages.error(request, f"Hubo un error al enviar los correos: {e}")
 
@@ -453,7 +479,6 @@ def enviar_cotizacion_aliados(request, tramite_id):
 
 @login_required
 def mis_tramites_cliente_view(request):
-    # Filtramos los trámites que pertenecen exclusivamente al usuario logueado
     tramites = Tramite.objects.filter(cliente=request.user).order_by('-fecha_creacion')
     return render(request, 'core/mis_tramites.html', {'tramites': tramites})
 
@@ -501,4 +526,3 @@ def detalle_tramite_cliente_view(request, numero_tramite):
         'historial': tramite.historial_documentos.all().order_by('-fecha_subida')
     }
     return render(request, 'core/detalle_tramite_cliente.html', context)
-

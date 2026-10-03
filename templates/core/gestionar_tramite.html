@@ -142,13 +142,13 @@
             </div>
         </div>
 
-        <!-- Sección de Gestión con Aliados Estratégicos (Actualizada con Checkboxes) -->
+        <!-- Sección de Gestión con Aliados Estratégicos -->
         <div style="background: #f8fafc; padding: 20px; border-radius: 8px; border: 1px solid #cbd5e1; margin-top: 25px;">
             <h3 style="color: #0d2346; font-size: 1.1rem; margin-bottom: 10px;">Gestión con Aliados Estratégicos</h3>
 
-            {% if tramite.enviado_a_aliado %}
+            {% if tramite.enviado_a_aliado and tramite.aliado_asignado %}
                 <p style="color: #16a34a; font-size: 0.9rem; font-weight: 600; margin-bottom: 15px;">
-                    ✓ Enviado previamente a: {{ tramite.aliado_asignado.nombre_empresa }} ({{ tramite.fecha_envio_aliado|date:"d M Y, H:i" }})
+                    ✓ Enviado previamente a: {{ tramite.aliado_asignado.nombre_agencia }} ({{ tramite.fecha_envio_aliado|date:"d M Y, H:i" }})
                 </p>
                 <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 10px;">Puedes marcar nuevos aliados si deseas reenviar o cotizar con más agencias:</p>
             {% endif %}
@@ -160,12 +160,20 @@
 
                 <div style="display: grid; grid-template-columns: 1fr; gap: 10px;">
                     {% for aliado in aliados_disponibles %}
-                        <div style="background: #ffffff; padding: 10px 15px; border: 1px solid #e2e8f0; border-radius: 6px; display: flex; align-items: center;">
-                            <!-- El atributo name="aliados_seleccionados" permite recibir múltiples valores mediante getlist() -->
-                            <input type="checkbox" name="aliados_seleccionados" value="{{ aliado.id }}" id="aliado_{{ aliado.id }}" style="width: 18px; height: 18px; cursor: pointer; margin-right: 12px;">
+                        <div style="background: #ffffff; padding: 12px 15px; border: 1px solid #e2e8f0; border-radius: 6px; display: flex; align-items: flex-start; gap: 12px;">
+                            <input type="checkbox" name="aliados_seleccionados" value="{{ aliado.id }}" id="aliado_{{ aliado.id }}" style="width: 18px; height: 18px; cursor: pointer; margin-top: 3px;">
                             <label for="aliado_{{ aliado.id }}" style="cursor: pointer; width: 100%; font-size: 0.95rem; color: #1e293b;">
-                                <strong>{{ aliado.nombre_empresa }}</strong>
-                                <span style="color: #64748b; font-size: 0.85rem;">({{ aliado.email }})</span>
+                                <strong style="color: #0d2346; font-size: 1rem; display: block; margin-bottom: 2px;">{{ aliado.nombre_agencia }}</strong>
+                                <span style="color: #64748b; font-size: 0.85rem;">
+                                    <strong>Contactos y correos:</strong>
+                                    {% if aliado.contactos.exists %}
+                                        {% for c in aliado.contactos.all %}
+                                            <br>• {{ c.nombre_contacto }} ({{ c.correo_cotizaciones }})
+                                        {% endfor %}
+                                    {% else %}
+                                        <span style="color: #dc2626;">Sin contactos registrados</span>
+                                    {% endif %}
+                                </span>
                             </label>
                         </div>
                     {% empty %}

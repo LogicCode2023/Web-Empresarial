@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.conf import settings
 
+
 class Tramite(models.Model):
     TIPO_SERVICIO_CHOICES = [
         ('busqueda', 'Búsqueda de Fábrica'),
@@ -39,7 +40,6 @@ class Tramite(models.Model):
     enviado_a_aliado = models.BooleanField(default=False, verbose_name="¿Enviado a cotizar?")
     fecha_envio_aliado = models.DateTimeField(null=True, blank=True, verbose_name="Fecha de Envío al Aliado")
 
-
     def save(self, *args, **kwargs):
         if not self.numero_tramite:
             ultimo = Tramite.objects.all().order_by('id').last()
@@ -47,8 +47,42 @@ class Tramite(models.Model):
             self.numero_tramite = f"TRM-{nuevo_id:04d}"
         super().save(*args, **kwargs)
 
+    @property
+    def get_contacto_nombre(self):
+        # Si tiene un usuario real asociado que no sea una cuenta técnica temporal
+        if self.cliente and not self.cliente.username.startswith('eltramite_'):
+            return self.cliente.get_full_name() or self.cliente.username
+
+        # Si es un trámite externo, buscamos el nombre en los detalles del servicio correspondiente
+        if hasattr(self, 'detalle_busqueda') and self.detalle_busqueda.nombre_contacto:
+            return self.detalle_busqueda.nombre_contacto
+        if hasattr(self, 'detalle_asesoria') and self.detalle_asesoria.nombre_contacto:
+            return self.detalle_asesoria.nombre_contacto
+        if hasattr(self, 'detalle_representacion') and self.detalle_representacion.nombre_empresa:
+            return self.detalle_representacion.nombre_empresa
+
+        return self.cliente.username if self.cliente else "Cliente General"
+
+    @property
+    def get_contacto_telefono(self):
+        # Buscamos el teléfono de contacto en los modelos de detalle que lo incluyan
+        if hasattr(self, 'detalle_busqueda') and self.detalle_busqueda.telefono:
+            return self.detalle_busqueda.telefono
+        if hasattr(self, 'detalle_asesoria') and self.detalle_asesoria.telefono:
+            return self.detalle_asesoria.telefono
+        if hasattr(self, 'detalle_representacion') and self.detalle_representacion.telefono:
+            return self.detalle_representacion.telefono
+        return None
+
+    @property
+    def get_contacto_email(self):
+        if self.cliente and self.cliente.email:
+            return self.cliente.email
+        return None
+
     def __str__(self):
-        return f"{self.numero_tramite} - {self.get_tipo_servicio_display()} ({self.cliente.username})"
+        cliente_str = self.cliente.username if self.cliente else "Sin cliente"
+        return f"{self.numero_tramite} - {self.get_tipo_servicio_display()} ({cliente_str})"
 
 
 # --- MODELOS ESPECÍFICOS POR FORMULARIO ---
@@ -128,31 +162,39 @@ class DetalleRepresentacion(models.Model):
 
 
 class AliadoEstrategico(models.Model):
-    TIPO_SERVICIO_CHOICES = [
-        ('busqueda', 'Búsqueda de Fábrica'),
-        ('asesoria', 'Asesoría y Validación de Compras'),
-        ('logistica', 'Logística Internacional'),
-        ('nacionalizacion', 'Nacionalización y Aduanas'),
-        ('inspeccion', 'Inspección en Origen'),
-        ('transporte_local', 'Transporte Local'),
-        ('representacion', 'Representación y Distribución'),
-    ]
+    nombre_agencia = models.CharField(max_length=150, verbose_name="Nombre de la Agencia / Aliado", null=True,
+                                      blank=True)
 
-    nombre_empresa = models.CharField(max_length=150, verbose_name="Nombre de la Agencia/Aliado")
-    contacto = models.CharField(max_length=100, verbose_name="Persona de Contacto", blank=True, null=True)
-    email = models.EmailField(verbose_name="Correo Electrónico de Cotizaciones")
-    telefono = models.CharField(max_length=30, blank=True, null=True, verbose_name="Teléfono")
-    tipo_servicio = models.JSONField(default=list, blank=True, verbose_name="Especialidades / Servicios")
+    # Especialidades / Servicios que ofrece la agencia
+    especialidad_busqueda = models.BooleanField(default=False, verbose_name="Búsqueda de Fábrica")
+    especialidad_asesoria = models.BooleanField(default=False, verbose_name="Asesoría y Validación de Compras")
+    especialidad_logistica = models.BooleanField(default=False, verbose_name="Logística Internacional")
+    especialidad_nacionalizacion = models.BooleanField(default=False, verbose_name="Nacionalización y Aduanas")
+    especialidad_inspeccion = models.BooleanField(default=False, verbose_name="Inspección en Origen")
+    especialidad_transporte_local = models.BooleanField(default=False, verbose_name="Transporte Local y Entrega")
+    especialidad_representacion = models.BooleanField(default=False, verbose_name="Representación y Distribución")
+
     activo = models.BooleanField(default=True, verbose_name="¿Activo?")
-
-    @property
-    def get_servicios_display(self):
-        dict_choices = dict(self.TIPO_SERVICIO_CHOICES)
-        nombres = [dict_choices.get(sev, sev) for sev in self.tipo_servicio]
-        return ", ".join(nombres) if nombres else "Sin servicios asignados"
+    fecha_registro = models.DateTimeField(auto_now_add=True, null=True, blank=True)
 
     def __str__(self):
-        return f"{self.nombre_empresa}"
+        return self.nombre_agencia or "Sin nombre"
+
+
+class ContactoAliado(models.Model):
+    aliado = models.ForeignKey(
+        AliadoEstrategico,
+        on_delete=models.CASCADE,
+        related_name="contactos",
+        verbose_name="Empresa Aliada"
+    )
+    nombre_contacto = models.CharField(max_length=100, verbose_name="Persona de Contacto")
+    correo_cotizaciones = models.EmailField(verbose_name="Correo Electrónico de Cotizaciones")
+    telefono = models.CharField(max_length=30, blank=True, null=True, verbose_name="Teléfono")
+    es_principal = models.BooleanField(default=False, verbose_name="¿Es contacto principal?")
+
+    def __str__(self):
+        return f"{self.nombre_contacto} ({self.aliado.nombre_agencia})"
 
 
 class HistorialDocumentoTrámite(models.Model):

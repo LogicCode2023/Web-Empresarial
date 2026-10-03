@@ -23,6 +23,7 @@ body {
   padding: 15px 5%;
   width: 100%;
   background-color: #ffffff;
+  position: relative;
 }
 
 .logo {

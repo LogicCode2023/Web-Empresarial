@@ -11,6 +11,14 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
 from pathlib import Path
+import os
+from dotenv import load_dotenv
+
+# Carga las variables del archivo .env
+load_dotenv()
+
+# Lee la SECRET_KEY de forma segura desde el archivo .env o del servidor
+SECRET_KEY = os.environ.get('SECRET_KEY')
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -19,11 +27,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-8enlx@ln45e46lujio6@uc)s!k7j-&e=pb=ch&(!(*(1p-d9d&'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = ['*']
 
@@ -78,7 +84,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'web_empresarial',
         'USER': 'postgres',
-        'PASSWORD': 'copomugre2027',  # La contraseña que acabas de configurar
+        'PASSWORD': 'copomugre2026',  # La contraseña que acabas de configurar
         'HOST': 'localhost',
         'PORT': '5432',
     }

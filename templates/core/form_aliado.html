@@ -2,60 +2,133 @@
 {% load static %}
 
 {% block content %}
-<div style="max-width: 600px; margin: 40px auto; padding: 30px; background: #ffffff; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+<div style="max-width: 800px; margin: 40px auto; padding: 30px; background: #ffffff; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
 
     <div style="border-bottom: 2px solid #e2e8f0; padding-bottom: 15px; margin-bottom: 25px;">
         <h2 style="color: #0d2346; margin: 0; font-size: 1.5rem;">{{ accion }} Empresa Aliada</h2>
     </div>
 
-    <form method="post">
+    <form method="post" id="aliado-form">
         {% csrf_token %}
 
+        {% if form.errors %}
+            <div style="background-color: #fee2e2; color: #b91c1c; padding: 12px; border-radius: 6px; margin-bottom: 20px; font-size: 0.9rem;">
+                Por favor, corrige los errores señalados abajo.
+            </div>
+        {% endif %}
+
+        <!-- Campo de Nombre de Agencia -->
         <div style="margin-bottom: 20px;">
-            <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #334155;">Nombre de la Agencia /
-                Aliado:</label>
-            <input type="text" name="nombre_empresa" value="{{ aliado.nombre_empresa }}" required
-                   style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 1rem;">
+            <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #334155;">{{ form.nombre_agencia.label }}</label>
+            {{ form.nombre_agencia }}
+            {% if form.nombre_agencia.errors %}
+                <div style="color: #dc2626; font-size: 0.85rem; margin-top: 4px;">{{ form.nombre_agencia.errors.0 }}</div>
+            {% endif %}
         </div>
 
-        <div style="margin-bottom: 20px;">
-            <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #334155;">Persona de
-                Contacto:</label>
-            <input type="text" name="contacto" class="form-control" value="{{ aliado.contacto|default:'' }}"
-                   style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 1rem;">
-        </div>
+        <!-- SECCIÓN DE CONTACTOS MÚLTIPLES (Formset) -->
+        <div style="margin-bottom: 25px; background: #f8fafc; padding: 20px; border-radius: 8px; border: 1px solid #cbd5e1;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h3 style="color: #0d2346; font-size: 1.1rem; margin: 0;">Contactos de la Agencia</h3>
+                <button type="button" id="add-contact-btn" style="background-color: #0284c7; color: #ffffff; border: none; padding: 6px 12px; border-radius: 4px; font-size: 0.85rem; font-weight: 600; cursor: pointer;">
+                    + Agregar otro contacto
+                </button>
+            </div>
 
-        <div style="margin-bottom: 20px;">
-            <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #334155;">Correo Electrónico de
-                Cotizaciones:</label>
-            <input type="email" name="email" value="{{ aliado.email }}" required
-                   style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 1rem;">
-        </div>
+            {{ formset.management_form }}
 
-        <div style="margin-bottom: 20px;">
-            <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #334155;">Teléfono:</label>
-            <input type="text" name="telefono" class="form-control" value="{{ aliado.telefono }}"
-                   style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 1rem;">
-        </div>
+            <div id="contactos-container" style="display: flex; flex-direction: column; gap: 15px;">
+                {% for f in formset %}
+                    <div class="contacto-form-row" style="background: #ffffff; padding: 15px; border-radius: 6px; border: 1px solid #e2e8f0; position: relative;">
+                        {% for hidden in f.hidden_fields %}
+                            {{ hidden }}
+                        {% endfor %}
 
-        <div style="margin-bottom: 25px;">
-            <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #334155;">Especialidad / Tipo de
-                Servicio:</label>
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #cbd5e1;">
-                {% for key, value in tipo_servicio_choices %}
-                <div style="display: flex; align-items: center; gap: 8px;">
-                    <input type="checkbox" name="servicios_ofrecidos" value="{{ key }}" id="serv_{{ key }}"
-                           {% if key in aliado.servicios_ofrecidos %}checked{% endif %}
-                           style="width: 18px; height: 18px; accent-color: #ff6600; cursor: pointer;">
-                    <label for="serv_{{ key }}"
-                           style="font-size: 0.9rem; color: #1e293b; cursor: pointer; font-weight: 500;">
-                        {{ value }}
-                    </label>
-                </div>
+                        {% if f.non_field_errors %}
+                            <div style="color: #dc2626; font-size: 0.8rem; margin-bottom: 8px;">{{ f.non_field_errors }}</div>
+                        {% endif %}
+
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 10px;">
+                            <div>
+                                <label style="display: block; font-weight: 500; font-size: 0.85rem; color: #475569; margin-bottom: 4px;">Persona de Contacto:</label>
+                                {{ f.nombre_contacto }}
+                                {% if f.nombre_contacto.errors %}<span style="color: #dc2626; font-size: 0.75rem;">{{ f.nombre_contacto.errors.0 }}</span>{% endif %}
+                            </div>
+                            <div>
+                                <label style="display: block; font-weight: 500; font-size: 0.85rem; color: #475569; margin-bottom: 4px;">Correo de Cotizaciones:</label>
+                                {{ f.correo_cotizaciones }}
+                                {% if f.correo_cotizaciones.errors %}<span style="color: #dc2626; font-size: 0.75rem;">{{ f.correo_cotizaciones.errors.0 }}</span>{% endif %}
+                            </div>
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: center;">
+                            <div>
+                                <label style="display: block; font-weight: 500; font-size: 0.85rem; color: #475569; margin-bottom: 4px;">Teléfono:</label>
+                                {{ f.telefono }}
+                                {% if f.telefono.errors %}<span style="color: #dc2626; font-size: 0.75rem;">{{ f.telefono.errors.0 }}</span>{% endif %}
+                            </div>
+                            {% if formset.can_delete %}
+                                <div style="display: flex; align-items: center; gap: 6px; padding-top: 20px;">
+                                    {{ f.DELETE }}
+                                    <label for="{{ f.DELETE.id_for_label }}" style="font-size: 0.85rem; color: #dc2626; font-weight: 500; cursor: pointer;">Eliminar contacto</label>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
                 {% endfor %}
             </div>
         </div>
 
+        <!-- ESPECIALIDADES (Checkboxes) -->
+        <div style="margin-bottom: 25px;">
+            <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #334155;">Especialidades / Servicios Ofrecidos:</label>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #cbd5e1;">
+
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    {{ form.especialidad_busqueda }}
+                    <label for="{{ form.especialidad_busqueda.id_for_label }}" style="font-size: 0.9rem; color: #1e293b; cursor: pointer; font-weight: 500;">Búsqueda de Fábrica</label>
+                </div>
+
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    {{ form.especialidad_asesoria }}
+                    <label for="{{ form.especialidad_asesoria.id_for_label }}" style="font-size: 0.9rem; color: #1e293b; cursor: pointer; font-weight: 500;">Asesoría y Validación</label>
+                </div>
+
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    {{ form.especialidad_logistica }}
+                    <label for="{{ form.especialidad_logistica.id_for_label }}" style="font-size: 0.9rem; color: #1e293b; cursor: pointer; font-weight: 500;">Logística Internacional</label>
+                </div>
+
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    {{ form.especialidad_nacionalizacion }}
+                    <label for="{{ form.especialidad_nacionalizacion.id_for_label }}" style="font-size: 0.9rem; color: #1e293b; cursor: pointer; font-weight: 500;">Nacionalización y Aduanas</label>
+                </div>
+
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    {{ form.especialidad_inspeccion }}
+                    <label for="{{ form.especialidad_inspeccion.id_for_label }}" style="font-size: 0.9rem; color: #1e293b; cursor: pointer; font-weight: 500;">Inspección en Origen</label>
+                </div>
+
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    {{ form.especialidad_transporte_local }}
+                    <label for="{{ form.especialidad_transporte_local.id_for_label }}" style="font-size: 0.9rem; color: #1e293b; cursor: pointer; font-weight: 500;">Transporte Local</label>
+                </div>
+
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    {{ form.especialidad_representacion }}
+                    <label for="{{ form.especialidad_representacion.id_for_label }}" style="font-size: 0.9rem; color: #1e293b; cursor: pointer; font-weight: 500;">Representación y Distribución</label>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Estado Activo -->
+        <div style="margin-bottom: 25px; display: flex; align-items: center; gap: 10px;">
+            {{ form.activo }}
+            <label for="{{ form.activo.id_for_label }}" style="font-weight: 600; color: #334155; cursor: pointer;">Agencia Activa</label>
+        </div>
+
+        <!-- Botones de Acción -->
         <div style="display: flex; gap: 15px;">
             <button type="submit"
                     style="background-color: #ff6600; color: #ffffff; padding: 12px 25px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 1rem;">
@@ -66,4 +139,39 @@
         </div>
     </form>
 </div>
+
+<!-- Script para agregar filas de contactos dinámicamente -->
+<script>
+    document.getElementById('add-contact-btn').addEventListener('click', function() {
+        const totalForms = document.getElementById('id_contactos-TOTAL_FORMS');
+        let formCount = parseInt(totalForms.value);
+
+        const container = document.getElementById('contactos-container');
+        const rowToClone = container.querySelector('.contacto-form-row');
+        if (!rowToClone) return;
+
+        const newRow = rowToClone.cloneNode(true);
+
+        // Reemplazamos los índices numéricos en los nombres e IDs internos de Django
+        const regex = new RegExp(`-${formCount - 1}-`, 'g');
+        newRow.innerHTML = newRow.innerHTML.replace(/-0-/g, `-${formCount}-`);
+
+        // Limpiamos los campos del nuevo bloque clonado
+        const inputs = newRow.querySelectorAll('input');
+        inputs.forEach(input => {
+            if (input.type === 'text' || input.type === 'email') {
+                input.value = '';
+            }
+            if (input.type === 'checkbox') {
+                input.checked = false;
+            }
+            if (input.type === 'hidden' && input.name.includes('-id')) {
+                input.value = '';
+            }
+        });
+
+        container.appendChild(newRow);
+        totalForms.value = formCount + 1;
+    });
+</script>
 {% endblock %}

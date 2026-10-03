@@ -2,7 +2,7 @@
 {% load static %}
 
 {% block content %}
-<div style="max-width: 1000px; margin: 40px auto; padding: 30px; background: #ffffff; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+<div style="max-width: 1100px; margin: 40px auto; padding: 30px; background: #ffffff; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
 
     <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e2e8f0; padding-bottom: 15px; margin-bottom: 25px;">
         <h2 style="color: #0d2346; margin: 0; font-size: 1.5rem;">Gestión de Empresas Aliadas</h2>
@@ -21,34 +21,80 @@
             <thead>
                 <tr style="background-color: #f8fafc; border-bottom: 2px solid #cbd5e1; color: #334155;">
                     <th style="padding: 12px;">Empresa / Agencia</th>
-                    <th style="padding: 12px;">Contacto</th>
+                    <th style="padding: 12px;">Contactos</th>
                     <th style="padding: 12px;">Especialidad / Servicio(s)</th>
-                    <th style="padding: 12px;">Correo de Cotizaciones</th>
+                    <th style="padding: 12px;">Correo(s) de Cotizaciones</th>
                     <th style="padding: 12px;">Estado</th>
                     <th style="padding: 12px; text-align: center;">Acciones</th>
                 </tr>
             </thead>
             <tbody>
                 {% for aliado in aliados %}
-                    <tr style="border-bottom: 1px solid #e2e8f0;">
-                        <td style="padding: 12px; font-weight: 600; color: #0f172a;">{{ aliado.nombre_empresa }}</td>
-                        <td style="padding: 12px; color: #475569;">{{ aliado.contacto|default:"-" }}</td>
-                        <td style="padding: 12px; color: #475569;">
-                            {{ aliado.get_servicios_display }}
+                    <tr style="border-bottom: 1px solid #e2e8f0; vertical-align: top;">
+                        <!-- Nombre de la Agencia -->
+                        <td style="padding: 14px 12px; font-weight: 600; color: #0f172a;">
+                            {{ aliado.nombre_agencia }}
                         </td>
-                        <td style="padding: 12px; color: #475569;">{{ aliado.email }}</td>
-                        <td style="padding: 12px;">
+
+                        <!-- Lista de Contactos múltiples -->
+                        <td style="padding: 14px 12px; color: #475569;">
+                            <div style="display: flex; flex-direction: column; gap: 6px;">
+                                {% for contacto in aliado.contactos.all %}
+                                    <div style="font-size: 0.9rem;">
+                                        <span style="font-weight: 600; color: #1e293b;">{{ contacto.nombre_contacto }}</span>
+                                        {% if contacto.telefono %}
+                                            <span style="color: #64748b; font-size: 0.8rem; display: block;">📞 {{ contacto.telefono }}</span>
+                                        {% endif %}
+                                    </div>
+                                {% empty %}
+                                    <span style="color: #94a3b8; font-style: italic;">Sin contactos</span>
+                                {% endfor %}
+                            </div>
+                        </td>
+
+                        <!-- Especialidades -->
+                        <td style="padding: 14px 12px; color: #475569; font-size: 0.85rem;">
+                            <div style="display: flex; flex-wrap: wrap; gap: 4px;">
+                                {% if aliado.especialidad_busqueda %}<span style="background: #f1f5f9; padding: 2px 6px; border-radius: 4px; border: 1px solid #cbd5e1;">Búsqueda de Fábrica</span>{% endif %}
+                                {% if aliado.especialidad_asesoria %}<span style="background: #f1f5f9; padding: 2px 6px; border-radius: 4px; border: 1px solid #cbd5e1;">Asesoría y Validación</span>{% endif %}
+                                {% if aliado.especialidad_logistica %}<span style="background: #f1f5f9; padding: 2px 6px; border-radius: 4px; border: 1px solid #cbd5e1;">Logística Internacional</span>{% endif %}
+                                {% if aliado.especialidad_nacionalizacion %}<span style="background: #f1f5f9; padding: 2px 6px; border-radius: 4px; border: 1px solid #cbd5e1;">Nacionalización y Aduanas</span>{% endif %}
+                                {% if aliado.especialidad_inspeccion %}<span style="background: #f1f5f9; padding: 2px 6px; border-radius: 4px; border: 1px solid #cbd5e1;">Inspección en Origen</span>{% endif %}
+                                {% if aliado.especialidad_transporte_local %}<span style="background: #f1f5f9; padding: 2px 6px; border-radius: 4px; border: 1px solid #cbd5e1;">Transporte Local</span>{% endif %}
+                                {% if aliado.especialidad_representacion %}<span style="background: #f1f5f9; padding: 2px 6px; border-radius: 4px; border: 1px solid #cbd5e1;">Representación y Distribución</span>{% endif %}
+                            </div>
+                        </td>
+
+                        <!-- Correos Múltiples -->
+                        <td style="padding: 14px 12px; color: #475569;">
+                            <div style="display: flex; flex-direction: column; gap: 6px;">
+                                {% for contacto in aliado.contactos.all %}
+                                    <div style="font-size: 0.9rem;">
+                                        <a href="mailto:{{ contacto.correo_cotizaciones }}" style="color: #0284c7; text-decoration: none;">✉️ {{ contacto.correo_cotizaciones }}</a>
+                                    </div>
+                                {% empty %}
+                                    <span style="color: #94a3b8; font-style: italic;">Sin correo</span>
+                                {% endfor %}
+                            </div>
+                        </td>
+
+                        <!-- Estado -->
+                        <td style="padding: 14px 12px; vertical-align: middle;">
                             {% if aliado.activo %}
                                 <span style="background: #dcfce7; color: #15803d; padding: 4px 8px; border-radius: 12px; font-size: 0.8rem; font-weight: 600;">Activo</span>
                             {% else %}
                                 <span style="background: #fee2e2; color: #b91c1c; padding: 4px 8px; border-radius: 12px; font-size: 0.8rem; font-weight: 600;">Anulado</span>
                             {% endif %}
                         </td>
-                        <td style="padding: 12px; text-align: center;">
-                            <a href="{% url 'editar_aliado' aliado.id %}" style="background-color: #0284c7; color: #fff; padding: 6px 12px; border-radius: 4px; text-decoration: none; font-size: 0.85rem; margin-right: 5px;">Editar</a>
-                            <a href="{% url 'anular_aliado' aliado.id %}" style="background-color: {% if aliado.activo %}#dc2626{% else %}#16a34a{% endif %}; color: #fff; padding: 6px 12px; border-radius: 4px; text-decoration: none; font-size: 0.85rem;" onclick="return confirm('¿Estás seguro de cambiar el estado de este aliado?');">
-                                {% if aliado.activo %}Anular{% else %}Activar{% endif %}
-                            </a>
+
+                        <!-- Acciones -->
+                        <td style="padding: 14px 12px; text-align: center; vertical-align: middle;">
+                            <div style="display: flex; flex-direction: column; gap: 6px; align-items: center;">
+                                <a href="{% url 'editar_aliado' aliado.id %}" style="background-color: #0284c7; color: #fff; padding: 6px 12px; border-radius: 4px; text-decoration: none; font-size: 0.85rem; width: 80px; text-align: center;">Editar</a>
+                                <a href="{% url 'anular_aliado' aliado.id %}" style="background-color: {% if aliado.activo %}#dc2626{% else %}#16a34a{% endif %}; color: #fff; padding: 6px 12px; border-radius: 4px; text-decoration: none; font-size: 0.85rem; width: 80px; text-align: center;" onclick="return confirm('¿Estás seguro de cambiar el estado de este aliado?');">
+                                    {% if aliado.activo %}Anular{% else %}Activar{% endif %}
+                                </a>
+                            </div>
                         </td>
                     </tr>
                 {% empty %}

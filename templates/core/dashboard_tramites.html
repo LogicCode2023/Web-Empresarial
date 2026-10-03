@@ -10,7 +10,7 @@
 
     <div style="display: grid; grid-template-columns: 260px 1fr; gap: 25px;">
 
-        <!-- BARRA LATERAL DE FILTROS (Estilo Admin nativo pero mejorado) -->
+        <!-- BARRA LATERAL DE FILTROS -->
         <aside style="background: #1e293b; color: #f8fafc; padding: 20px; border-radius: 12px; height: fit-content;">
             <h3 style="font-size: 1rem; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #334155; padding-bottom: 10px; margin-top: 0; color: #38bdf8;">
                 Filtros
@@ -38,6 +38,9 @@
                         <option value="asesoria" {% if selected_tipo == 'asesoria' %}selected{% endif %}>Asesoría y Validación</option>
                         <option value="logistica" {% if selected_tipo == 'logistica' %}selected{% endif %}>Logística Internacional</option>
                         <option value="nacionalizacion" {% if selected_tipo == 'nacionalizacion' %}selected{% endif %}>Nacionalización y Aduanas</option>
+                        <option value="inspeccion" {% if selected_tipo == 'inspeccion' %}selected{% endif %}>Inspección en Origen</option>
+                        <option value="transporte_local" {% if selected_tipo == 'transporte_local' %}selected{% endif %}>Transporte Local y Entrega</option>
+                        <option value="representacion" {% if selected_tipo == 'representacion' %}selected{% endif %}>Representación y Distribución</option>
                     </select>
                 </div>
 
@@ -47,8 +50,9 @@
                     <select name="estado" onchange="this.form.submit()" style="width: 100%; padding: 8px; border-radius: 6px; background: #0f172a; color: #fff; border: 1px solid #334155;">
                         <option value="">Todo</option>
                         <option value="pendiente" {% if selected_estado == 'pendiente' %}selected{% endif %}>Pendiente de Revisión</option>
-                        <option value="proceso" {% if selected_estado == 'proceso' %}selected{% endif %}>En Proceso</option>
+                        <option value="en_proceso" {% if selected_estado == 'en_proceso' %}selected{% endif %}>En Proceso</option>
                         <option value="completado" {% if selected_estado == 'completado' %}selected{% endif %}>Completado</option>
+                        <option value="cancelado" {% if selected_estado == 'cancelado' %}selected{% endif %}>Cancelado</option>
                     </select>
                 </div>
 
@@ -77,7 +81,7 @@
                     <thead>
                         <tr style="background: #f8fafc; color: #64748b; font-size: 0.85rem; text-transform: uppercase; border-bottom: 2px solid #e2e8f0;">
                             <th style="padding: 12px;">Nº Trámite</th>
-                            <th style="padding: 12px;">Cliente</th>
+                            <th style="padding: 12px;">Cliente / Contacto</th>
                             <th style="padding: 12px;">Tipo Servicio</th>
                             <th style="padding: 12px;">Estado</th>
                             <th style="padding: 12px;">Fecha</th>
@@ -87,15 +91,46 @@
                     <tbody>
                         {% for t in tramites %}
                             <tr style="border-bottom: 1px solid #e2e8f0; font-size: 0.95rem; color: #1e293b;">
-                                <td style="padding: 14px; font-weight: 700; color: #ea580c;">{{ t.numero_tramite }}</td>
-                                <td style="padding: 14px; font-weight: 600;">{{ t.cliente.username }}</td>
-                                <td style="padding: 14px;">{{ t.get_tipo_servicio_display }}</td>
+                                <!-- Número de Trámite -->
+                                <td style="padding: 14px; font-weight: 700; color: #ea580c;">
+                                    {{ t.numero_tramite }}
+                                </td>
+
+                                <!-- Nombre, Correo y WhatsApp usando las propiedades de Tramite -->
+                                <td style="padding: 14px; vertical-align: middle;">
+                                    <div style="font-weight: 600; color: #1e293b;">
+                                        {{ t.get_contacto_nombre }}
+                                    </div>
+
+                                    <div style="font-size: 0.85rem; color: #64748b; margin-top: 4px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center;">
+                                        {% if t.get_contacto_email %}
+                                            <a href="mailto:{{ t.get_contacto_email }}" title="Enviar correo" style="color: #0284c7; text-decoration: none; font-size: 0.8rem; background: #f0f9ff; padding: 2px 6px; border-radius: 4px; border: 1px solid #bae6fd;">✉️ {{ t.get_contacto_email }}</a>
+                                        {% endif %}
+
+                                        {% if t.get_contacto_telefono %}
+                                            <a href="https://wa.me/593{{ t.get_contacto_telefono }}" target="_blank" title="Abrir WhatsApp" style="color: #15803d; text-decoration: none; font-size: 0.8rem; background: #f0fdf4; padding: 2px 6px; border-radius: 4px; border: 1px solid #bbf7d0; font-weight: 600;">💬 {{ t.get_contacto_telefono }}</a>
+                                        {% endif %}
+                                    </div>
+                                </td>
+
+                                <!-- Tipo Servicio -->
+                                <td style="padding: 14px;">
+                                    {{ t.get_tipo_servicio_display }}
+                                </td>
+
+                                <!-- Estado -->
                                 <td style="padding: 14px;">
                                     <span style="background: #f1f5f9; color: #334155; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 600;">
                                         {{ t.get_estado_display }}
                                     </span>
                                 </td>
-                                <td style="padding: 14px; color: #64748b; font-size: 0.85rem;">{{ t.fecha_creacion|date:"d M Y, H:i" }}</td>
+
+                                <!-- Fecha -->
+                                <td style="padding: 14px; color: #64748b; font-size: 0.85rem;">
+                                    {{ t.fecha_creacion|date:"d M Y, H:i" }}
+                                </td>
+
+                                <!-- Acción -->
                                 <td style="padding: 14px; text-align: center;">
                                     <a href="{% url 'gestionar_tramite' t.id %}"
                                        style="background: #0d2346; color: #fff; padding: 6px 12px; border-radius: 6px; text-decoration: none; font-size: 0.85rem; font-weight: 600;">

@@ -1,22 +1,35 @@
 from django import forms
-from .models import (
-    DetalleBusquedaFabrica,
-    DetalleAsesoriaCompras,
-    DetalleLogistica,
-    DetalleNacionalizacion,
-    DetalleInspeccion,
-    DetalleTransporteLocal,
-    DetalleRepresentacion,
-    AliadoEstrategico
-)
-
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
+
+from .models import (
+    AliadoEstrategico,
+    ContactoAliado,
+    DetalleAsesoriaCompras,
+    DetalleBusquedaFabrica,
+    DetalleInspeccion,
+    DetalleLogistica,
+    DetalleNacionalizacion,
+    DetalleRepresentacion,
+    DetalleTransporteLocal,
+)
+
 
 class RegistroForm(UserCreationForm):
     class Meta:
         model = User
         fields = ['username', 'email']
+
+    # Validacion amigable
+    def clean_username(self):
+        username = self.cleaned_data.get('username')
+        if username:
+            username = username.strip().replace(' ', '_')
+
+            if User.objects.filter(username__iexact=username).exists():
+                raise forms.ValidationError('El usuario ya existe')
+            return username
+
 
 class BusquedaFabricaForm(forms.ModelForm):
     class Meta:
@@ -42,6 +55,7 @@ class BusquedaFabricaForm(forms.ModelForm):
             'cantidad_estimada': forms.TextInput(attrs={'class': 'form-control mb-3', 'placeholder': 'Ej: 500 unidades / 1 contenedor', 'style': 'width: 100%;'}),
             'especificaciones': forms.Textarea(attrs={'class': 'form-control mb-3', 'rows': 3, 'placeholder': 'Detalles técnicos o requerimientos adicionales...', 'style': 'width: 100%;'}),
         }
+
 
 class AsesoriaComprasForm(forms.ModelForm):
     class Meta:
@@ -76,6 +90,7 @@ class AsesoriaComprasForm(forms.ModelForm):
             'archivo_adjunto': forms.FileInput(attrs={'class': 'form-control mb-3', 'style': 'width: 100%;'}),
         }
 
+
 class LogisticaForm(forms.ModelForm):
     class Meta:
         model = DetalleLogistica
@@ -102,6 +117,7 @@ class LogisticaForm(forms.ModelForm):
             'archivo_adjunto': forms.FileInput(attrs={'class': 'form-control mb-3', 'style': 'width: 100%;'}),
         }
 
+
 class NacionalizacionForm(forms.ModelForm):
     class Meta:
         model = DetalleNacionalizacion
@@ -124,6 +140,7 @@ class NacionalizacionForm(forms.ModelForm):
             'archivo_adjunto': forms.FileInput(attrs={'class': 'form-control mb-3', 'style': 'width: 100%;'}),
         }
 
+
 class InspeccionForm(forms.ModelForm):
     class Meta:
         model = DetalleInspeccion
@@ -143,6 +160,7 @@ class InspeccionForm(forms.ModelForm):
             ], attrs={'class': 'form-control mb-3', 'style': 'width: 100%;'}),
             'archivo_adjunto': forms.FileInput(attrs={'class': 'form-control mb-3', 'style': 'width: 100%;'}),
         }
+
 
 class TransporteLocalForm(forms.ModelForm):
     class Meta:
@@ -164,6 +182,7 @@ class TransporteLocalForm(forms.ModelForm):
             'archivo_adjunto': forms.FileInput(attrs={'class': 'form-control mb-3', 'style': 'width: 100%;'}),
         }
 
+
 class RepresentacionForm(forms.ModelForm):
     class Meta:
         model = DetalleRepresentacion
@@ -184,19 +203,32 @@ class RepresentacionForm(forms.ModelForm):
 
 
 class AliadoEstrategicoForm(forms.ModelForm):
-    servicios_ofrecidos = forms.MultipleChoiceField(
-        choices=AliadoEstrategico.TIPO_SERVICIO_CHOICES,
-        widget=forms.CheckboxSelectMultiple(attrs={'class': 'form-check-input'}),
-        required=False,
-        label="Servicios que ofrece el Aliado"
-    )
-
     class Meta:
         model = AliadoEstrategico
-        fields = ['nombre_empresa', 'contacto', 'email', 'telefono', 'servicios_ofrecidos', 'activo']
+        fields = [
+            'nombre_agencia',
+            'especialidad_busqueda',
+            'especialidad_asesoria',
+            'especialidad_logistica',
+            'especialidad_nacionalizacion',
+            'especialidad_inspeccion',
+            'especialidad_transporte_local',
+            'especialidad_representacion',
+            'activo'
+        ]
         widgets = {
-            'nombre_empresa': forms.TextInput(attrs={'class': 'form-control mb-3', 'placeholder': 'Ej: Si-Comex', 'style': 'width: 100%;'}),
-            'contacto': forms.TextInput(attrs={'class': 'form-control mb-3', 'placeholder': 'Ej: Adrian Gomez', 'style': 'width: 100%;'}),
-            'email': forms.EmailInput(attrs={'class': 'form-control mb-3', 'placeholder': 'Ej: contacto@sicomex.com', 'style': 'width: 100%;'}),
-            'telefono': forms.TextInput(attrs={'class': 'form-control mb-3', 'placeholder': 'Ej: +593 99 123 4567', 'style': 'width: 100%;'}),
+            'nombre_agencia': forms.TextInput(attrs={
+                'class': 'w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500'
+            }),
+        }
+
+
+class ContactoAliadoForm(forms.ModelForm):
+    class Meta:
+        model = ContactoAliado
+        fields = ['nombre_contacto', 'correo_cotizaciones', 'telefono', 'es_principal']
+        widgets = {
+            'nombre_contacto': forms.TextInput(attrs={'class': 'w-full px-4 py-2 border rounded-lg'}),
+            'correo_cotizaciones': forms.EmailInput(attrs={'class': 'w-full px-4 py-2 border rounded-lg'}),
+            'telefono': forms.TextInput(attrs={'class': 'w-full px-4 py-2 border rounded-lg'}),
         }

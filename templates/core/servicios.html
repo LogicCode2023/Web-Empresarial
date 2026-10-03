@@ -23,17 +23,18 @@
       <div class="service-img-wrapper">
         <img src="{% static 'core/img/proveedores.jpg' %}" alt="Búsqueda de proveedores">
       </div>
-      <div class="service-content">
-        <h3>Búsqueda de proveedores directos</h3>
-        <p class="service-description">
-          Te conectamos con fabricantes directos y verificados en China para asegurar calidad, precio y confianza en tu
-          mercancía.
-        </p>
+        <div class="service-content">
+            <h3>Búsqueda de proveedores directos</h3>
+            <p class="service-description">
+                Te conectamos con fabricantes directos y verificados en China para asegurar calidad, precio y confianza
+                en tu
+                mercancía.
+            </p>
 
-        <a href="{% url 'solicitud_busqueda' %}?producto=Proveedores" class="service-link">
-          Más Información <span class="plus-icon">+</span>
-        </a>
-      </div>
+            <a href="{% url 'crear_tramite' 'busqueda' %}" class="service-link">
+                Más Información <span class="plus-icon">+</span>
+            </a>
+        </div>
     </div>
 
     <!-- Tarjeta 2: Asesoría de Compras -->

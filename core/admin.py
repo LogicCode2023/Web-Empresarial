@@ -1,6 +1,7 @@
 from django.contrib import admin
 from .models import (
     AliadoEstrategico,
+    ContactoAliado,
     Tramite,
     DetalleBusquedaFabrica,
     DetalleAsesoriaCompras,
@@ -74,9 +75,24 @@ class TramiteAdmin(admin.ModelAdmin):
     ]
 
 
+# Inline para gestionar los múltiples contactos dentro de la misma vista de la Empresa Aliada
+class ContactoAliadoInline(admin.TabularInline):
+    model = ContactoAliado
+    extra = 1
+
 
 @admin.register(AliadoEstrategico)
 class AliadoEstrategicoAdmin(admin.ModelAdmin):
-    list_display = ('nombre_empresa', 'contacto', 'email', 'tipo_servicio', 'activo')
-    list_filter = ('tipo_servicio', 'activo')
-    search_fields = ('nombre_empresa', 'email')
+    list_display = ('nombre_agencia', 'activo', 'fecha_registro')
+    list_filter = (
+        'activo',
+        'especialidad_busqueda',
+        'especialidad_asesoria',
+        'especialidad_logistica',
+        'especialidad_nacionalizacion',
+        'especialidad_inspeccion',
+        'especialidad_transporte_local',
+        'especialidad_representacion'
+    )
+    search_fields = ('nombre_agencia',)
+    inlines = [ContactoAliadoInline]
