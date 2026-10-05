@@ -228,8 +228,7 @@ class TransporteLocalForm(forms.ModelForm):
                     ),
                 ),
             ], attrs={
-                'class': 'form-control mb-3',
-                'style': 'width: 100%; padding: 10px; background: #1e293b; border: 1px solid #334155; color: #fff; border-radius: 6px;'
+                'class': 'form-control',  # Dejamos solo la clase base limpia para que Tom Select la tome
             }),
 
             'ciudad_destino': forms.TextInput(
