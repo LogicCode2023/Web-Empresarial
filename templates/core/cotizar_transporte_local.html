@@ -60,19 +60,20 @@
         <!-- 2. Vía Manual en Orden Lógico -->
 
         <!-- A. Estado Aduanero y Origen -->
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
-          <div>
-            <label style="display: block; color: #cbd5e1; margin-bottom: 8px; font-size: 0.9rem;">¿Ya cuentas con Levante Aduanero?</label>
-            <select name="estado_aduanero" style="width: 100%; padding: 12px; background: #1e293b; border: 1px solid #334155; color: #fff; border-radius: 6px;">
-              <option value="si">Sí, tributos pagados y carga lista para retiro</option>
-              <option value="en_proceso">Aún en trámite de nacionalización</option>
-            </select>
+        <!-- A. Estado Aduanero y Origen -->
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+              <div>
+                  <label style="display: block; color: #cbd5e1; margin-bottom: 8px; font-size: 0.9rem;">¿Ya cuentas con
+                      Levante Aduanero?</label>
+                  {{ form.cuenta_con_levante }}
+              </div>
+              <div>
+                  <label style="display: block; color: #cbd5e1; margin-bottom: 8px; font-size: 0.9rem;">Punto de Partida
+                      (Puerto / Depósito)</label>
+                  <!-- Aquí usamos el campo del formulario de Django que ya viene con la lista desplegable agrupada -->
+                  {{ form.punto_partida }}
+              </div>
           </div>
-          <div>
-            <label style="display: block; color: #cbd5e1; margin-bottom: 8px; font-size: 0.9rem;">Punto de Partida (Puerto / Depósito)</label>
-            <input type="text" name="origen_local" placeholder="Ej. Contecon Guayaquil / Tababela" style="width: 100%; padding: 12px; background: #1e293b; border: 1px solid #334155; color: #fff; border-radius: 6px; box-sizing: border-box;">
-          </div>
-        </div>
 
         <!-- B. Destino, Tipo de Vehículo y Peso -->
         <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 25px;">
