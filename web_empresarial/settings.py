@@ -13,6 +13,11 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 from pathlib import Path
 import os
 from dotenv import load_dotenv
+import ssl
+from django.core.mail.backends.smtp import EmailBackend
+from django.core.mail import send_mail, EmailMessage, EmailMultiAlternatives
+from django.conf import settings
+
 
 # Carga las variables del archivo .env
 load_dotenv()
@@ -82,11 +87,11 @@ WSGI_APPLICATION = 'web_empresarial.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'web_empresarial',
-        'USER': 'postgres',
-        'PASSWORD': 'copomugre2026',  # La contraseña que acabas de configurar
-        'HOST': 'localhost',
-        'PORT': '5432',
+        'NAME': os.environ.get('DB_NAME', 'web_empresarial'),
+        'USER': os.environ.get('DB_USER', 'postgres'),
+        'PASSWORD': os.environ.get('DB_PASSWORD'),
+        'HOST': os.environ.get('DB_HOST', 'localhost'),
+        'PORT': os.environ.get('DB_PORT', '5432'),
     }
 }
 
@@ -132,10 +137,45 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 LOGIN_REDIRECT_URL = 'home'
 
 # Configuración de Correo Electrónico
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend' # O usa 'django.core.mail.backends.console.EmailBackend' para pruebas en consola
-EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp-relay.brevo.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
-EMAIL_HOST_USER = 'juanjosedaste@gmail.com'  # Tu correo real de envío
-EMAIL_HOST_PASSWORD = 'mtamocrzlifouurz' # Contraseña de aplicación de Google
-DEFAULT_FROM_EMAIL = 'Panel Operativo <juanjosedaste@gmail.com>'
+EMAIL_HOST_USER = 'bca904001@smtp-brevo.com'  # Tu correo real de envío
+EMAIL_HOST_PASSWORD = os.environ.get('BREVO_SMTP_PASSWORD')
+DEFAULT_FROM_EMAIL = 'Sistema Portium Group <no-reply@portiumgroup.com>'
+
+
+class CustomEmailBackend(EmailBackend):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        import ssl
+        ctx = ssl._create_unverified_context()
+        ctx.check_hostname = False
+        ctx.verify_mode = ssl.CERT_NONE
+        self.ssl_context = ctx
+
+
+def enviar_correo_portium(destinatario, asunto, mensaje_texto, remitente=None, mensaje_html=None):
+    # Si no se especifica un remitente, usa el predeterminado de los ajustes
+    from_email = remitente or settings.DEFAULT_FROM_EMAIL
+
+    try:
+        msg = EmailMultiAlternatives(
+            subject=asunto,
+            body=mensaje_texto,
+            from_email=from_email,
+            to=[destinatario]
+        )
+        if mensaje_html:
+            msg.attach_alternative(mensaje_html, "text/html")
+
+        msg.send(fail_silently=False)
+        return True, "Correo enviado exitosamente"
+    except Exception as e:
+        return False, str(e)
+
+
+
+
+

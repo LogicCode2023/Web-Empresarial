@@ -8,7 +8,7 @@
     <!-- Vinculación del archivo CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="{% static 'core/css/styles.css' %}">
-    <!-- CDN de FontAwesome para Iconos de Redes Sociales -->
+    <!-- CDN de FontAwesome para Iconos -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         /* Header de gran formato */
@@ -203,7 +203,14 @@
                 <div class="nav-auth-container">
                     {% if user.is_authenticated %}
                         <span style="font-size: 0.95rem; color: #0d2346; font-weight: 600;">Hola, {{ user.username }}</span>
+
                         <a href="{% url 'mis_tramites' %}" style="background-color: #0d2346; color: #ffffff; padding: 6px 12px; border-radius: 4px; text-decoration: none; font-weight: 500; font-size: 0.9rem;">Mis Trámites</a>
+
+                        <!-- Botón para Redactar Correo Corporativo -->
+                        <a href="{% url 'redactar_correo' %}" style="background-color: #0d2346; color: #ffffff; padding: 6px 12px; border-radius: 4px; text-decoration: none; font-weight: 500; font-size: 0.9rem;">
+                            <i class="fas fa-paper-plane" style="margin-right: 5px;"></i> Redactar Correo
+                        </a>
+
                         <form method="post" action="{% url 'logout' %}" style="display: inline; margin: 0;">
                             {% csrf_token %}
                             <button type="submit" style="background: none; border: 1px solid #0d2346; color: #0d2346; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.9rem;">Cerrar Sesión</button>
@@ -311,7 +318,7 @@
 </footer>
 {% endif %}
 
-<!-- Botón Flotente de WhatsApp -->
+<!-- Botón Flotante de WhatsApp -->
 {% if request.resolver_match.url_name != 'dashboard_tramites' and request.resolver_match.url_name != 'gestionar_tramite' %}
 <a href="https://wa.me/593986318226?text=Hola,%20quiero%20mas%20informacion" class="whatsapp-float" target="_blank" rel="noopener noreferrer" style="position: fixed; bottom: 20px; right: 20px; z-index: 1000;">
     <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="WhatsApp-icon" style="width: 50px; height: 50px;">

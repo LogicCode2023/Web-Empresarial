@@ -300,3 +300,30 @@ class ContactoAliadoForm(forms.ModelForm):
             'correo_cotizaciones': forms.EmailInput(attrs={'class': 'w-full px-4 py-2 border rounded-lg'}),
             'telefono': forms.TextInput(attrs={'class': 'w-full px-4 py-2 border rounded-lg'}),
         }
+
+
+
+class CorreoManualForm(forms.Form):
+    destinatario = forms.EmailField(
+        label="Para",
+        widget=forms.EmailInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'cliente@ejemplo.com'
+        })
+    )
+    asunto = forms.CharField(
+        label="Asunto",
+        max_length=200,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Asunto del correo'
+        })
+    )
+    mensaje = forms.CharField(
+        label="Mensaje",
+        widget=forms.Textarea(attrs={
+            'class': 'form-control',
+            'rows': 8,
+            'placeholder': 'Escribe aquí tu mensaje...'
+        })
+    )

@@ -25,6 +25,14 @@ from .forms import (
     TransporteLocalForm,
 )
 from .models import AliadoEstrategico, ContactoAliado, HistorialDocumentoTrámite, Tramite
+from django.conf import settings
+from .forms import CorreoManualForm
+
+
+REMITENTES_POR_USUARIO = {
+    'juanjose': 'Juan Daste <ejecutivo1@portiumgroup.com>',
+    'juansebas': 'Gerencia Portium <gerencia@portiumgroup.com>',
+}
 
 # Definición del formset para gestionar los contactos múltiples de cada aliado
 ContactoAliadoFormSet = inlineformset_factory(
@@ -305,10 +313,14 @@ def gestionar_tramite_view(request, tramite_id):
                     f'Atentamente,\nEquipo de Operaciones - Portium Group'
                 )
 
+                # --- ASIGNACIÓN DINÁMICA DEL REMITENTE ---
+                username_actual = request.user.username.lower()
+                remitente = REMITENTES_POR_USUARIO.get(username_actual, settings.DEFAULT_FROM_EMAIL)
+
                 email_msg = EmailMessage(
                     subject=asunto,
                     body=cuerpo,
-                    from_email=None,
+                    from_email=remitente,
                     to=correos_destinatarios,
                 )
 
@@ -526,3 +538,41 @@ def detalle_tramite_cliente_view(request, numero_tramite):
         'historial': tramite.historial_documentos.all().order_by('-fecha_subida')
     }
     return render(request, 'core/detalle_tramite_cliente.html', context)
+
+
+@login_required
+def redactar_correo_view(request):
+    # Asigna el correo corporativo del usuario o usa el predeterminado si no está en la lista
+    remitente_correo = REMITENTES_POR_USUARIO.get(
+        request.user.username,
+        getattr(settings, 'DEFAULT_FROM_EMAIL', 'contacto@portiumgroup.com')
+    )
+
+    if request.method == 'POST':
+        form = CorreoManualForm(request.POST)
+        if form.is_valid():
+            destinatario = form.cleaned_data['destinatario']
+            asunto = form.cleaned_data['asunto']
+            mensaje = form.cleaned_data['mensaje']
+
+            try:
+                # Envío directo transaccional vía Brevo SMTP
+                send_mail(
+                    subject=asunto,
+                    message=mensaje,
+                    from_email=f"Portium Group <{remitente_correo}>",
+                    recipient_list=[destinatario],
+                    fail_silently=False,
+                )
+                messages.success(request, f"Correo enviado exitosamente a {destinatario} desde {remitente_correo}.")
+                return redirect('redactar_correo')
+            except Exception as e:
+                messages.error(request, f"Ocurrió un error al enviar el correo: {e}")
+    else:
+        form = CorreoManualForm()
+
+    context = {
+        'form': form,
+        'remitente_correo': remitente_correo
+    }
+    return render(request, 'panel/redactar_correo.html', context)

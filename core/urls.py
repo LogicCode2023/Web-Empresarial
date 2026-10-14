@@ -28,5 +28,6 @@ urlpatterns = [
     path('mis-tramites/', views.mis_tramites_cliente_view, name='mis_tramites'),
     path('tramite/detalle/<str:numero_tramite>/', views.detalle_tramite_cliente_view, name='detalle_tramite_cliente'),
     path('tramite/detalle/<str:numero_tramite>/', views.detalle_tramite_cliente_view, name='detalle_tramite_cliente'),
+    path('panel/redactar-correo/', views.redactar_correo_view, name='redactar_correo'),
 ]
 
