@@ -575,4 +575,4 @@ def redactar_correo_view(request):
         'form': form,
         'remitente_correo': remitente_correo
     }
-    return render(request, 'panel/redactar_correo.html', context)
+    return render(request, 'core/redactar_correo.html', context)
