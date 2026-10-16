@@ -29,6 +29,7 @@ from django.conf import settings
 from .forms import CorreoManualForm
 import os
 import base64
+import sib_api_v3_sdk
 from sib_api_v3_sdk.rest import ApiException
 
 
