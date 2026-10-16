@@ -66,10 +66,8 @@ def signup_view(request):
 def obtener_o_crear_usuario_anonimo(request, email, nombre_completo=None):
     """
     Gestiona la lógica de identificación:
-- Si está autenticado, devuelve el usuario actual.
-
-- Si no, busca por email; si existe lo retorna, si no, crea un usuario temporal.
-
+    - Si está autenticado, devuelve el usuario actual.
+    - Si no, busca por email; si existe lo retorna, si no, crea un usuario temporal.
     """
     if request.user.is_authenticated:
         return request.user
@@ -268,8 +266,6 @@ class CustomLoginView(LoginView):
 def gestionar_tramite_view(request, tramite_id):
     tramite = get_object_or_404(Tramite, id=tramite_id)
 
-    # Filtrar aliados usando campos booleanos o la estructura que maneje tu modelo actual de AliadoEstrategico
-    # Ejemplo dinámico según la especialidad del trámite:
     filtro_especialidad = {f'especialidad_{tramite.tipo_servicio}': True} if hasattr(AliadoEstrategico,
                                                                                      f'especialidad_{tramite.tipo_servicio}') else {}
     aliados_disponibles = AliadoEstrategico.objects.filter(activo=True,
@@ -294,7 +290,6 @@ def gestionar_tramite_view(request, tramite_id):
             correos_enviados = 0
 
             for aliado in aliados_a_cotizar:
-                # Obtenemos los correos mediante sus contactos o campo directo si existiera
                 correos_destinatarios = list(aliado.contactos.values_list('correo_cotizaciones', flat=True))
                 if not correos_destinatarios and hasattr(aliado, 'email') and aliado.email:
                     correos_destinatarios = [aliado.email]
@@ -315,7 +310,6 @@ def gestionar_tramite_view(request, tramite_id):
                     f'Atentamente,\nEquipo de Operaciones - Portium Group'
                 )
 
-                # --- ASIGNACIÓN DINÁMICA DEL REMITENTE ---
                 username_actual = request.user.username.lower()
                 remitente = REMITENTES_POR_USUARIO.get(username_actual, settings.DEFAULT_FROM_EMAIL)
 
@@ -384,26 +378,22 @@ def gestionar_tramite_view(request, tramite_id):
 
 @staff_member_required
 def lista_aliados(request):
-    """Muestra el listado de empresas aliadas en el panel personalizado"""
     aliados = AliadoEstrategico.objects.all().order_by('-id')
     return render(request, 'core/admin_aliados.html', {'aliados': aliados})
 
 
 @staff_member_required
 def crear_aliado(request):
-    """Permite registrar un nuevo aliado con sus contactos"""
     return guardar_aliado(request, pk=None)
 
 
 @staff_member_required
 def editar_aliado(request, pk):
-    """Permite editar un aliado existente y sus contactos"""
     return guardar_aliado(request, pk=pk)
 
 
 @staff_member_required
 def anular_aliado(request, pk):
-    """Cambia el estado del aliado a inactivo o activo (anulación lógica)"""
     aliado = get_object_or_404(AliadoEstrategico, pk=pk)
     aliado.activo = not aliado.activo
     aliado.save()
@@ -413,7 +403,6 @@ def anular_aliado(request, pk):
 
 @staff_member_required
 def guardar_aliado(request, pk=None):
-    """Lógica unificada para crear o editar un aliado estratégico junto a su formset de contactos"""
     aliado = get_object_or_404(AliadoEstrategico, pk=pk) if pk else AliadoEstrategico()
 
     if request.method == 'POST':
@@ -563,7 +552,6 @@ def redactar_correo_view(request):
             mensaje = form.cleaned_data['mensaje']
             archivo = form.cleaned_data.get('archivo_adjunto')
 
-            # Limpiar y separar múltiples correos (por comas o puntos y comas)
             destinatarios = [e.strip() for e in destinatario_raw.replace(';', ',').split(',') if e.strip()]
             cc_list = [e.strip() for e in cc_raw.replace(';', ',').split(',') if e.strip()] if cc_raw else []
 
@@ -579,9 +567,10 @@ def redactar_correo_view(request):
                 if archivo:
                     email.attach(archivo.name, archivo.read(), archivo.content_type)
 
+                # Intentar enviar por SMTP de manera segura
                 email.send(fail_silently=False)
 
-                # Guardar el registro en el historial (cortando por seguridad si la cadena es muy larga)
+                # Guardar el historial si el envío fue exitoso
                 CorreoEnviado.objects.create(
                     remitente_usuario=request.user,
                     remitente_correo=remitente_correo,
@@ -595,7 +584,9 @@ def redactar_correo_view(request):
                 return redirect(f"{request.path}?email={destinatarios[0] if destinatarios else ''}")
 
             except Exception as e:
-                messages.error(request, f"Error al enviar el correo: {e}")
+                print(f"ERROR CRITICO SMTP: {e}")
+                messages.error(request, f"Error de conexión con el servidor de correo (SMTP): {e}")
+                return redirect(request.path)
         else:
             messages.error(request, "Por favor corrige los errores en el formulario.")
     else:
