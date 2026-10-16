@@ -49,11 +49,9 @@ class Tramite(models.Model):
 
     @property
     def get_contacto_nombre(self):
-        # Si tiene un usuario real asociado que no sea una cuenta técnica temporal
         if self.cliente and not self.cliente.username.startswith('eltramite_'):
             return self.cliente.get_full_name() or self.cliente.username
 
-        # Si es un trámite externo, buscamos el nombre en los detalles del servicio correspondiente
         if hasattr(self, 'detalle_busqueda') and self.detalle_busqueda.nombre_contacto:
             return self.detalle_busqueda.nombre_contacto
         if hasattr(self, 'detalle_asesoria') and self.detalle_asesoria.nombre_contacto:
@@ -65,7 +63,6 @@ class Tramite(models.Model):
 
     @property
     def get_contacto_telefono(self):
-        # Buscamos el teléfono de contacto en los modelos de detalle que lo incluyan
         if hasattr(self, 'detalle_busqueda') and self.detalle_busqueda.telefono:
             return self.detalle_busqueda.telefono
         if hasattr(self, 'detalle_asesoria') and self.detalle_asesoria.telefono:
@@ -91,7 +88,7 @@ class DetalleBusquedaFabrica(models.Model):
     tramite = models.OneToOneField(Tramite, on_delete=models.CASCADE, related_name='detalle_busqueda')
     producto = models.CharField(max_length=255)
     marca_referencia = models.CharField(max_length=255, blank=True, null=True)
-    nombre_contacto = models.CharField(max_length=255)
+    nombre_contacto = models.CharField(max_length=255, blank=True, null=True)
     telefono = models.CharField(max_length=50)
     ha_importado_antes = models.CharField(max_length=50)
     link_producto = models.URLField(blank=True, null=True)
@@ -102,7 +99,7 @@ class DetalleBusquedaFabrica(models.Model):
 
 class DetalleAsesoriaCompras(models.Model):
     tramite = models.OneToOneField(Tramite, on_delete=models.CASCADE, related_name='detalle_asesoria')
-    nombre_contacto = models.CharField(max_length=255)
+    nombre_contacto = models.CharField(max_length=255, blank=True, null=True)
     telefono = models.CharField(max_length=50)
     donde_encontro_proveedor = models.CharField(max_length=100)
     estado_negociacion = models.CharField(max_length=100)
@@ -162,10 +159,8 @@ class DetalleRepresentacion(models.Model):
 
 
 class AliadoEstrategico(models.Model):
-    nombre_agencia = models.CharField(max_length=150, verbose_name="Nombre de la Agencia / Aliado", null=True,
-                                      blank=True)
+    nombre_agencia = models.CharField(max_length=150, verbose_name="Nombre de la Agencia / Aliado", null=True, blank=True)
 
-    # Especialidades / Servicios que ofrece la agencia
     especialidad_busqueda = models.BooleanField(default=False, verbose_name="Búsqueda de Fábrica")
     especialidad_asesoria = models.BooleanField(default=False, verbose_name="Asesoría y Validación de Compras")
     especialidad_logistica = models.BooleanField(default=False, verbose_name="Logística Internacional")
@@ -207,3 +202,16 @@ class HistorialDocumentoTrámite(models.Model):
 
     def __str__(self):
         return f"Historial {self.nombre_archivo} - Trámite #{self.tramite.numero_tramite}"
+
+
+class CorreoEnviado(models.Model):
+    remitente_usuario = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Enviado por")
+    remitente_correo = models.CharField(max_length=255, verbose_name="Correo remitente")
+    destinatario = models.EmailField(verbose_name="Para")
+    asunto = models.CharField(max_length=255, verbose_name="Asunto")
+    mensaje = models.TextField(verbose_name="Mensaje")
+    archivo_adjunto = models.FileField(upload_to='correos_adjuntos/', null=True, blank=True, verbose_name="Archivo Adjunto")
+    fecha_envio = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de Envío")
+
+    def __str__(self):
+        return f"{self.asunto} -> {self.destinatario} ({self.fecha_envio.strftime('%Y-%m-%d %H:%M')})"

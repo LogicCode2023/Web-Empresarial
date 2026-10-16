@@ -21,22 +21,47 @@
                 {% endfor %}
             {% endif %}
 
-            <form method="post" novalidate>
+            <!-- Se agrega enctype="multipart/form-data" para permitir archivos adjuntos -->
+            <form method="post" enctype="multipart/form-data" novalidate>
                 {% csrf_token %}
 
                 <div class="mb-3">
                     <label class="form-label fw-bold">Para:</label>
                     {{ form.destinatario }}
+                    {% if form.destinatario.errors %}
+                        <div class="text-danger small mt-1">{{ form.destinatario.errors|strip_tags }}</div>
+                    {% endif %}
                 </div>
 
                 <div class="mb-3">
                     <label class="form-label fw-bold">Asunto:</label>
                     {{ form.asunto }}
+                    {% if form.asunto.errors %}
+                        <div class="text-danger small mt-1">{{ form.asunto.errors|strip_tags }}</div>
+                    {% endif %}
                 </div>
 
-                <div class="mb-4">
+                <div class="mb-3">
                     <label class="form-label fw-bold">Mensaje:</label>
                     {{ form.mensaje }}
+                    {% if form.mensaje.errors %}
+                        <div class="text-danger small mt-1">{{ form.mensaje.errors|strip_tags }}</div>
+                    {% endif %}
+                </div>
+
+                <!-- Campo nuevo para adjuntar archivos (PDFs, Imágenes, Documentos) -->
+                <div class="mb-4">
+                    <label class="form-label fw-bold">
+                        <i class="bi bi-paperclip me-1"></i> Adjuntar Documento o Imagen:
+                    </label>
+                    {% if form.archivo_adjunto %}
+                        {{ form.archivo_adjunto }}
+                    {% else %}
+                        <input type="file" name="archivo_adjunto" id="id_archivo_adjunto" class="form-control">
+                    {% endif %}
+                    <div class="form-text small text-muted">
+                        Puedes adjuntar PDFs, cotizaciones en Word, imágenes (PNG, JPG), etc.
+                    </div>
                 </div>
 
                 <div class="d-grid">

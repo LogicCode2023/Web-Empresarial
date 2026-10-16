@@ -24,7 +24,7 @@ from .forms import (
     RepresentacionForm,
     TransporteLocalForm,
 )
-from .models import AliadoEstrategico, ContactoAliado, HistorialDocumentoTrámite, Tramite
+from .models import AliadoEstrategico, ContactoAliado, HistorialDocumentoTrámite, Tramite, CorreoEnviado
 from django.conf import settings
 from .forms import CorreoManualForm
 
@@ -542,37 +542,64 @@ def detalle_tramite_cliente_view(request, numero_tramite):
 
 @login_required
 def redactar_correo_view(request):
-    # Asigna el correo corporativo del usuario o usa el predeterminado si no está en la lista
-    remitente_correo = REMITENTES_POR_USUARIO.get(
-        request.user.username,
-        getattr(settings, 'DEFAULT_FROM_EMAIL', 'contacto@portiumgroup.com')
-    )
+    # Definir los remitentes permitidos para tu equipo
+    remitentes_disponibles = [
+        "ejecutivo1@portiumgroup.com",
+        "ejecutivo2@portiumgroup.com",
+        "contacto@portiumgroup.com"
+    ]
+
+    # Determinar el remitente activo según el usuario conectado
+    username_actual = request.user.username.lower()
+    remitente_correo = REMITENTES_POR_USUARIO.get(username_actual, remitentes_disponibles[0])
 
     if request.method == 'POST':
-        form = CorreoManualForm(request.POST)
+        form = CorreoManualForm(request.POST, request.FILES)
         if form.is_valid():
             destinatario = form.cleaned_data['destinatario']
             asunto = form.cleaned_data['asunto']
             mensaje = form.cleaned_data['mensaje']
+            archivo = form.cleaned_data.get('archivo_adjunto')
 
             try:
-                # Envío directo transaccional vía Brevo SMTP
-                send_mail(
+                # 1. Configurar el correo con soporte para adjuntos usando EmailMessage
+                email = EmailMessage(
                     subject=asunto,
-                    message=mensaje,
+                    body=mensaje,
                     from_email=f"Portium Group <{remitente_correo}>",
-                    recipient_list=[destinatario],
-                    fail_silently=False,
+                    to=[destinatario],
                 )
-                messages.success(request, f"Correo enviado exitosamente a {destinatario} desde {remitente_correo}.")
+
+                # Si el usuario subió un archivo, lo adjuntamos al mensaje de email
+                if archivo:
+                    email.attach(archivo.name, archivo.read(), archivo.content_type)
+
+                # 2. Enviar a través de Brevo SMTP
+                email.send(fail_silently=False)
+
+                # 3. Guardar el historial en la base de datos (Opción B)
+                CorreoEnviado.objects.create(
+                    remitente_usuario=request.user,
+                    remitente_correo=remitente_correo,
+                    destinatario=destinatario,
+                    asunto=asunto,
+                    mensaje=mensaje,
+                    archivo_adjunto=archivo
+                )
+
+                messages.success(request, f"¡Correo enviado exitosamente a {destinatario} y guardado en el historial!")
                 return redirect('redactar_correo')
+
             except Exception as e:
-                messages.error(request, f"Ocurrió un error al enviar el correo: {e}")
+                messages.error(request, f"Error al enviar el correo: {e}")
+        else:
+            messages.error(request, "Por favor corrige los errores en el formulario.")
     else:
         form = CorreoManualForm()
 
     context = {
         'form': form,
+        'remitentes': remitentes_disponibles,
         'remitente_correo': remitente_correo
     }
     return render(request, 'core/redactar_correo.html', context)
