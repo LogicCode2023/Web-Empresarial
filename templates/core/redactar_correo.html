@@ -31,11 +31,24 @@
             <form method="POST" enctype="multipart/form-data">
                 {% csrf_token %}
 
-                <!-- Campo Para / Destinatario -->
+                <!-- Campo Para / Destinatarios Múltiples -->
                 <div style="margin-bottom: 15px;">
                     <label style="display: block; font-size: 0.85rem; font-weight: 600; color: #334155; margin-bottom: 5px;">Para:</label>
                     {{ form.destinatario }}
+                    <small style="color: #64748b; font-size: 0.75rem; display: block; margin-top: 3px;">
+                        Puedes ingresar uno o varios correos separados por comas (ej: cliente1@gmail.com, cliente2@gmail.com).
+                    </small>
                     {% if form.destinatario.errors %}<span style="color: #dc2626; font-size: 0.8rem;">{{ form.destinatario.errors }}</span>{% endif %}
+                </div>
+
+                <!-- Campo Copia (CC) -->
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; font-size: 0.85rem; font-weight: 600; color: #334155; margin-bottom: 5px;">Copia (CC - Opcional):</label>
+                    {{ form.cc }}
+                    <small style="color: #64748b; font-size: 0.75rem; display: block; margin-top: 3px;">
+                        Correos que recibirán una copia del mensaje (separados por comas).
+                    </small>
+                    {% if form.cc.errors %}<span style="color: #dc2626; font-size: 0.8rem;">{{ form.cc.errors }}</span>{% endif %}
                 </div>
 
                 <!-- Campo Asunto -->
