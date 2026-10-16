@@ -27,6 +27,11 @@ from .forms import (
 from .models import AliadoEstrategico, ContactoAliado, HistorialDocumentoTrámite, Tramite, CorreoEnviado
 from django.conf import settings
 from .forms import CorreoManualForm
+import os
+import base64
+from sib_api_v3_sdk.rest import ApiException
+
+
 
 
 REMITENTES_POR_USUARIO = {
@@ -556,19 +561,36 @@ def redactar_correo_view(request):
             cc_list = [e.strip() for e in cc_raw.replace(';', ',').split(',') if e.strip()] if cc_raw else []
 
             try:
-                email = EmailMessage(
+                # Configurar la API de Brevo
+                configuration = sib_api_v3_sdk.Configuration()
+                configuration.api_key['api-key'] = os.environ.get('BREVO_API_KEY')
+                api_instance = sib_api_v3_sdk.TransactionalEmailsApi(sib_api_v3_sdk.ApiClient(configuration))
+
+                # Mapear destinatarios principales y copias (CC)
+                to_dest = [{"email": email_addr} for email_addr in destinatarios]
+                cc_dest = [{"email": email_addr} for email_addr in cc_list] if cc_list else None
+
+                # Manejar archivo adjunto si existe
+                attachments = None
+                if archivo:
+                    contenido_base64 = base64.b64encode(archivo.read()).decode('utf-8')
+                    attachments = [{
+                        "content": contenido_base64,
+                        "name": archivo.name
+                    }]
+
+                # Construir el objeto de envío de Brevo
+                send_smtp_email = sib_api_v3_sdk.SendSmtpEmail(
+                    sender={"name": "Portium Group", "email": "contacto@portiumgroup.com"},
+                    to=to_dest,
+                    cc=cc_dest,
                     subject=asunto,
-                    body=mensaje,
-                    from_email=f"Portium Group <{remitente_correo}>",
-                    to=destinatarios,
-                    cc=cc_list
+                    text_content=mensaje,
+                    attachment=attachments
                 )
 
-                if archivo:
-                    email.attach(archivo.name, archivo.read(), archivo.content_type)
-
-                # Intentar enviar por SMTP de manera segura
-                email.send(fail_silently=False)
+                # Enviar correo vía API HTTP (Puerto 443)
+                api_instance.send_transac_email(send_smtp_email)
 
                 # Guardar el historial si el envío fue exitoso
                 CorreoEnviado.objects.create(
@@ -583,9 +605,13 @@ def redactar_correo_view(request):
                 messages.success(request, f"¡Correo enviado exitosamente a {destinatario_raw}!")
                 return redirect(f"{request.path}?email={destinatarios[0] if destinatarios else ''}")
 
+            except ApiException as e:
+                print(f"ERROR CRÍTICO API BREVO: {e}")
+                messages.error(request, f"Error al enviar correo por API de Brevo: {e}")
+                return redirect(request.path)
             except Exception as e:
-                print(f"ERROR CRITICO SMTP: {e}")
-                messages.error(request, f"Error de conexión con el servidor de correo (SMTP): {e}")
+                print(f"ERROR GENERAL: {e}")
+                messages.error(request, f"Ocurrió un error inesperado: {e}")
                 return redirect(request.path)
         else:
             messages.error(request, "Por favor corrige los errores en el formulario.")
