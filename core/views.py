@@ -542,12 +542,14 @@ def detalle_tramite_cliente_view(request, numero_tramite):
 
 @login_required
 def redactar_correo_view(request):
+    # Definir los remitentes permitidos para tu equipo
     remitentes_disponibles = [
         "ejecutivo1@portiumgroup.com",
         "ejecutivo2@portiumgroup.com",
         "contacto@portiumgroup.com"
     ]
 
+    # Determinar el remitente activo según el usuario conectado
     username_actual = request.user.username.lower()
     remitente_correo = REMITENTES_POR_USUARIO.get(username_actual, remitentes_disponibles[0])
 
@@ -563,6 +565,7 @@ def redactar_correo_view(request):
             archivo = form.cleaned_data.get('archivo_adjunto')
 
             try:
+                # 1. Configurar el correo con soporte para adjuntos usando EmailMessage
                 email = EmailMessage(
                     subject=asunto,
                     body=mensaje,
@@ -570,11 +573,14 @@ def redactar_correo_view(request):
                     to=[destinatario],
                 )
 
+                # Si el usuario subió un archivo, lo adjuntamos al mensaje de email
                 if archivo:
                     email.attach(archivo.name, archivo.read(), archivo.content_type)
 
+                # 2. Enviar a través de Brevo SMTP
                 email.send(fail_silently=False)
 
+                # 3. Guardar el historial en la base de datos (Opción B)
                 CorreoEnviado.objects.create(
                     remitente_usuario=request.user,
                     remitente_correo=remitente_correo,
