@@ -1,6 +1,7 @@
 from django.urls import path
 from django.contrib.auth import views as auth_views
 from . import views
+from .views import webhook_recibir_correo_view
 
 urlpatterns = [
     path('', views.home, name='home'),
@@ -29,5 +30,6 @@ urlpatterns = [
     path('tramite/detalle/<str:numero_tramite>/', views.detalle_tramite_cliente_view, name='detalle_tramite_cliente'),
     path('tramite/detalle/<str:numero_tramite>/', views.detalle_tramite_cliente_view, name='detalle_tramite_cliente'),
     path('panel/redactar-correo/', views.redactar_correo_view, name='redactar_correo'),
+    path('api/recibir-correo-webhook/', views.webhook_recibir_correo_view, name='webhook_recibir_correo'),
 ]
 

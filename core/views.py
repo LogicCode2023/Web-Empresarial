@@ -31,8 +31,9 @@ import os
 import base64
 import sib_api_v3_sdk
 from sib_api_v3_sdk.rest import ApiException
-
-
+import json
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
 
 
 REMITENTES_POR_USUARIO = {
@@ -600,7 +601,8 @@ def redactar_correo_view(request):
                     destinatario=", ".join(destinatarios)[:254],
                     asunto=asunto,
                     mensaje=mensaje,
-                    archivo_adjunto=archivo
+                    archivo_adjunto=archivo,
+                    tipo='ENVIADO'
                 )
 
                 messages.success(request, f"¡Correo enviado exitosamente a {destinatario_raw}!")
@@ -619,10 +621,14 @@ def redactar_correo_view(request):
     else:
         form = CorreoManualForm(initial={'destinatario': destinatario_initial})
 
+    # MODIFICADO: Ahora el historial filtra tanto envíos como respuestas entrantes para el hilo completo
     if destinatario_initial:
-        historial_correos = CorreoEnviado.objects.filter(destinatario__icontains=destinatario_initial).order_by('-fecha_envio')
+        historial_correos = CorreoEnviado.objects.filter(
+            models.Q(destinatario__icontains=destinatario_initial) |
+            models.Q(remitente_correo__icontains=destinatario_initial)
+        ).order_by('-fecha_envio')
     else:
-        historial_correos = CorreoEnviado.objects.all().order_by('-fecha_envio')[:10]
+        historial_correos = CorreoEnviado.objects.all().order_by('-fecha_envio')[:15]
 
     context = {
         'form': form,
@@ -632,3 +638,55 @@ def redactar_correo_view(request):
         'destinatario_actual': destinatario_initial
     }
     return render(request, 'core/redactar_correo.html', context)
+
+
+@csrf_exempt
+def webhook_recibir_correo_view(request):
+    """
+    Endpoint para recibir las respuestas de clientes enviadas por el Inbound Webhook de Brevo.
+    """
+    if request.method == 'POST':
+        try:
+            # Brevo envía los datos en formato JSON
+            data = json.loads(request.body.decode('utf-8'))
+
+            # Extraer campos clave según el payload de Inbound Email de Brevo
+            items = data.get('items', [])
+            if not items and 'From' in data:
+                items = [data]
+
+            for item in items:
+                # Obtener remitente (el cliente que responde)
+                remitente_info = item.get('From', {})
+                remitente_email = remitente_info.get('Address') if isinstance(remitente_info, dict) else str(
+                    remitente_info)
+
+                # Obtener destinatario (tu correo corporativo, p. ej. ejecutivo1@portiumgroup.com)
+                destinatarios = item.get('To', [])
+                destinatario_email = destinatarios[0].get('Address') if destinatarios and isinstance(destinatarios[0],
+                                                                                                     dict) else 'contacto@portiumgroup.com'
+
+                asunto = item.get('Subject', 'Sin asunto')
+                cuerpo = item.get('RawTextBody') or item.get('ExtractedMarkdown') or item.get('RawHtmlBody', '')
+                msg_id = item.get('Uuid') or item.get('MessageId', '')
+
+                # Evitar guardar duplicados si el webhook se dispara dos veces
+                if msg_id and CorreoEnviado.objects.filter(message_id=msg_id).exists():
+                    continue
+
+                # Guardar la respuesta entrante en la base de datos
+                CorreoEnviado.objects.create(
+                    remitente_correo=remitente_email,
+                    destinatario=destinatario_email,
+                    asunto=asunto,
+                    mensaje=cuerpo,
+                    tipo='RECIBIDO',
+                    message_id=msg_id
+                )
+
+            return JsonResponse({'status': 'ok', 'message': 'Correo procesado correctamente'}, status=200)
+
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+
+    return JsonResponse({'status': 'método no permitido'}, status=405)
