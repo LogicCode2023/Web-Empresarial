@@ -563,7 +563,7 @@ def redactar_correo_view(request):
             mensaje = form.cleaned_data['mensaje']
             archivo = form.cleaned_data.get('archivo_adjunto')
 
-            # Procesar múltiples destinatarios y CC separados por comas o punto y coma
+            # Limpiar y separar múltiples correos (por comas o puntos y comas)
             destinatarios = [e.strip() for e in destinatario_raw.replace(';', ',').split(',') if e.strip()]
             cc_list = [e.strip() for e in cc_raw.replace(';', ',').split(',') if e.strip()] if cc_raw else []
 
@@ -581,10 +581,11 @@ def redactar_correo_view(request):
 
                 email.send(fail_silently=False)
 
+                # Guardar el registro en el historial (cortando por seguridad si la cadena es muy larga)
                 CorreoEnviado.objects.create(
                     remitente_usuario=request.user,
                     remitente_correo=remitente_correo,
-                    destinatario=", ".join(destinatarios),
+                    destinatario=", ".join(destinatarios)[:254],
                     asunto=asunto,
                     mensaje=mensaje,
                     archivo_adjunto=archivo

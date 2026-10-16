@@ -323,11 +323,19 @@ class ContactoAliadoForm(forms.ModelForm):
 
 
 class CorreoManualForm(forms.Form):
-    destinatario = forms.EmailField(
+    destinatario = forms.CharField(
         label="Para",
-        widget=forms.EmailInput(attrs={
+        widget=forms.TextInput(attrs={
             'class': 'form-control',
-            'placeholder': 'cliente@ejemplo.com'
+            'placeholder': 'cliente1@ejemplo.com, cliente2@ejemplo.com'
+        })
+    )
+    cc = forms.CharField(
+        label="Copia (CC)",
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'copia1@portiumgroup.com, copia2@portiumgroup.com'
         })
     )
     asunto = forms.CharField(
@@ -353,4 +361,3 @@ class CorreoManualForm(forms.Form):
             'class': 'form-control'
         })
     )
-
