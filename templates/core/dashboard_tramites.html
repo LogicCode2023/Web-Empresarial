@@ -4,9 +4,20 @@
 {% block content %}
 <div style="max-width: 1200px; margin: 30px auto; padding: 0 20px; font-family: inherit;">
 
-    <h2 style="color: #0d2346; font-size: 1.8rem; font-weight: 700; margin-bottom: 20px;">
-        Gestión Integral de Trámites
-    </h2>
+    <!-- CABECERA DEL PANEL CON BOTONES DE ACCIÓN GLOBAL -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px;">
+        <h2 style="color: #0d2346; font-size: 1.8rem; font-weight: 700; margin: 0;">
+            Gestión Integral de Trámites
+        </h2>
+
+        <!-- BOTÓN ACCESO DIRECTO A REDACTAR CORREO -->
+        <div>
+            <a href="{% url 'redactar_correo' %}"
+               style="background: #0284c7; color: #ffffff; padding: 8px 16px; border-radius: 6px; text-decoration: none; font-size: 0.9rem; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 2px 5px rgba(2, 132, 199, 0.3);">
+                ✉️ Redactar Correo
+            </a>
+        </div>
+    </div>
 
     <div style="display: grid; grid-template-columns: 260px 1fr; gap: 25px;">
 
@@ -85,7 +96,7 @@
                             <th style="padding: 12px;">Tipo Servicio</th>
                             <th style="padding: 12px;">Estado</th>
                             <th style="padding: 12px;">Fecha</th>
-                            <th style="padding: 12px; text-align: center;">Acción</th>
+                            <th style="padding: 12px; text-align: center;">Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -104,7 +115,7 @@
 
                                     <div style="font-size: 0.85rem; color: #64748b; margin-top: 4px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center;">
                                         {% if t.get_contacto_email %}
-                                            <a href="mailto:{{ t.get_contacto_email }}" title="Enviar correo" style="color: #0284c7; text-decoration: none; font-size: 0.8rem; background: #f0f9ff; padding: 2px 6px; border-radius: 4px; border: 1px solid #bae6fd;">✉️ {{ t.get_contacto_email }}</a>
+                                            <a href="mailto:{{ t.get_contacto_email }}" title="Enviar correo cliente" style="color: #0284c7; text-decoration: none; font-size: 0.8rem; background: #f0f9ff; padding: 2px 6px; border-radius: 4px; border: 1px solid #bae6fd;">✉️ {{ t.get_contacto_email }}</a>
                                         {% endif %}
 
                                         {% if t.get_contacto_telefono %}
@@ -130,12 +141,22 @@
                                     {{ t.fecha_creacion|date:"d M Y, H:i" }}
                                 </td>
 
-                                <!-- Acción -->
+                                <!-- Acciones (Gestionar + Redactar Correo) -->
                                 <td style="padding: 14px; text-align: center;">
-                                    <a href="{% url 'gestionar_tramite' t.id %}"
-                                       style="background: #0d2346; color: #fff; padding: 6px 12px; border-radius: 6px; text-decoration: none; font-size: 0.85rem; font-weight: 600;">
-                                        Gestionar
-                                    </a>
+                                    <div style="display: flex; gap: 6px; justify-content: center; align-items: center;">
+                                        <a href="{% url 'gestionar_tramite' t.id %}"
+                                           style="background: #0d2346; color: #fff; padding: 6px 12px; border-radius: 6px; text-decoration: none; font-size: 0.85rem; font-weight: 600;">
+                                            Gestionar
+                                        </a>
+
+                                        {% if t.get_contacto_email %}
+                                            <a href="{% url 'redactar_correo' %}?email={{ t.get_contacto_email }}"
+                                               title="Redactar correo a {{ t.get_contacto_email }}"
+                                               style="background: #f1f5f9; color: #0284c7; padding: 6px 10px; border-radius: 6px; text-decoration: none; font-size: 0.85rem; border: 1px solid #cbd5e1;">
+                                                ✉️
+                                            </a>
+                                        {% endif %}
+                                    </div>
                                 </td>
                             </tr>
                         {% empty %}

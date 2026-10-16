@@ -542,16 +542,17 @@ def detalle_tramite_cliente_view(request, numero_tramite):
 
 @login_required
 def redactar_correo_view(request):
-    # Definir los remitentes permitidos para tu equipo
     remitentes_disponibles = [
         "ejecutivo1@portiumgroup.com",
         "ejecutivo2@portiumgroup.com",
         "contacto@portiumgroup.com"
     ]
 
-    # Determinar el remitente activo según el usuario conectado
     username_actual = request.user.username.lower()
     remitente_correo = REMITENTES_POR_USUARIO.get(username_actual, remitentes_disponibles[0])
+
+    # Capturar email si viene desde el panel operativo
+    destinatario_initial = request.GET.get('email', '')
 
     if request.method == 'POST':
         form = CorreoManualForm(request.POST, request.FILES)
@@ -562,7 +563,6 @@ def redactar_correo_view(request):
             archivo = form.cleaned_data.get('archivo_adjunto')
 
             try:
-                # 1. Configurar el correo con soporte para adjuntos usando EmailMessage
                 email = EmailMessage(
                     subject=asunto,
                     body=mensaje,
@@ -570,14 +570,11 @@ def redactar_correo_view(request):
                     to=[destinatario],
                 )
 
-                # Si el usuario subió un archivo, lo adjuntamos al mensaje de email
                 if archivo:
                     email.attach(archivo.name, archivo.read(), archivo.content_type)
 
-                # 2. Enviar a través de Brevo SMTP
                 email.send(fail_silently=False)
 
-                # 3. Guardar el historial en la base de datos (Opción B)
                 CorreoEnviado.objects.create(
                     remitente_usuario=request.user,
                     remitente_correo=remitente_correo,
@@ -588,18 +585,26 @@ def redactar_correo_view(request):
                 )
 
                 messages.success(request, f"¡Correo enviado exitosamente a {destinatario} y guardado en el historial!")
-                return redirect('redactar_correo')
+                return redirect(f"{request.path}?email={destinatario}")
 
             except Exception as e:
                 messages.error(request, f"Error al enviar el correo: {e}")
         else:
             messages.error(request, "Por favor corrige los errores en el formulario.")
     else:
-        form = CorreoManualForm()
+        form = CorreoManualForm(initial={'destinatario': destinatario_initial})
+
+    # Filtrar historial de correos para ver el hilo del cliente seleccionado
+    if destinatario_initial:
+        historial_correos = CorreoEnviado.objects.filter(destinatario__iexact=destinatario_initial).order_by('-fecha_envio')
+    else:
+        historial_correos = CorreoEnviado.objects.all().order_by('-fecha_envio')[:10]
 
     context = {
         'form': form,
         'remitentes': remitentes_disponibles,
-        'remitente_correo': remitente_correo
+        'remitente_correo': remitente_correo,
+        'historial_correos': historial_correos,
+        'destinatario_actual': destinatario_initial
     }
     return render(request, 'core/redactar_correo.html', context)
