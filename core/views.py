@@ -66,8 +66,10 @@ def signup_view(request):
 def obtener_o_crear_usuario_anonimo(request, email, nombre_completo=None):
     """
     Gestiona la lógica de identificación:
-    - Si está autenticado, devuelve el usuario actual.
-    - Si no, busca por email; si existe lo retorna, si no, crea un usuario temporal.
+- Si está autenticado, devuelve el usuario actual.
+
+- Si no, busca por email; si existe lo retorna, si no, crea un usuario temporal.
+
     """
     if request.user.is_authenticated:
         return request.user
@@ -542,56 +544,54 @@ def detalle_tramite_cliente_view(request, numero_tramite):
 
 @login_required
 def redactar_correo_view(request):
-    # Definir los remitentes permitidos para tu equipo
     remitentes_disponibles = [
         "ejecutivo1@portiumgroup.com",
         "ejecutivo2@portiumgroup.com",
         "contacto@portiumgroup.com"
     ]
 
-    # Determinar el remitente activo según el usuario conectado
     username_actual = request.user.username.lower()
     remitente_correo = REMITENTES_POR_USUARIO.get(username_actual, remitentes_disponibles[0])
-
-    # Capturar email si viene desde el panel operativo
     destinatario_initial = request.GET.get('email', '')
 
     if request.method == 'POST':
         form = CorreoManualForm(request.POST, request.FILES)
         if form.is_valid():
-            destinatario = form.cleaned_data['destinatario']
+            destinatario_raw = form.cleaned_data['destinatario']
+            cc_raw = form.cleaned_data.get('cc', '')
             asunto = form.cleaned_data['asunto']
             mensaje = form.cleaned_data['mensaje']
             archivo = form.cleaned_data.get('archivo_adjunto')
 
+            # Procesar múltiples destinatarios y CC separados por comas o punto y coma
+            destinatarios = [e.strip() for e in destinatario_raw.replace(';', ',').split(',') if e.strip()]
+            cc_list = [e.strip() for e in cc_raw.replace(';', ',').split(',') if e.strip()] if cc_raw else []
+
             try:
-                # 1. Configurar el correo con soporte para adjuntos usando EmailMessage
                 email = EmailMessage(
                     subject=asunto,
                     body=mensaje,
                     from_email=f"Portium Group <{remitente_correo}>",
-                    to=[destinatario],
+                    to=destinatarios,
+                    cc=cc_list
                 )
 
-                # Si el usuario subió un archivo, lo adjuntamos al mensaje de email
                 if archivo:
                     email.attach(archivo.name, archivo.read(), archivo.content_type)
 
-                # 2. Enviar a través de Brevo SMTP
                 email.send(fail_silently=False)
 
-                # 3. Guardar el historial en la base de datos (Opción B)
                 CorreoEnviado.objects.create(
                     remitente_usuario=request.user,
                     remitente_correo=remitente_correo,
-                    destinatario=destinatario,
+                    destinatario=", ".join(destinatarios),
                     asunto=asunto,
                     mensaje=mensaje,
                     archivo_adjunto=archivo
                 )
 
-                messages.success(request, f"¡Correo enviado exitosamente a {destinatario} y guardado en el historial!")
-                return redirect(f"{request.path}?email={destinatario}")
+                messages.success(request, f"¡Correo enviado exitosamente a {destinatario_raw}!")
+                return redirect(f"{request.path}?email={destinatarios[0] if destinatarios else ''}")
 
             except Exception as e:
                 messages.error(request, f"Error al enviar el correo: {e}")
@@ -600,9 +600,8 @@ def redactar_correo_view(request):
     else:
         form = CorreoManualForm(initial={'destinatario': destinatario_initial})
 
-    # Filtrar historial de correos para ver el hilo del cliente seleccionado
     if destinatario_initial:
-        historial_correos = CorreoEnviado.objects.filter(destinatario__iexact=destinatario_initial).order_by('-fecha_envio')
+        historial_correos = CorreoEnviado.objects.filter(destinatario__icontains=destinatario_initial).order_by('-fecha_envio')
     else:
         historial_correos = CorreoEnviado.objects.all().order_by('-fecha_envio')[:10]
 
