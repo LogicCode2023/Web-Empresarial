@@ -643,50 +643,46 @@ def redactar_correo_view(request):
 @csrf_exempt
 def webhook_recibir_correo_view(request):
     """
-    Endpoint para recibir las respuestas de clientes enviadas por el Inbound Webhook de Brevo.
+    Endpoint para recibir las respuestas de clientes enviadas por el Cloudflare Worker (Email Routing).
     """
     if request.method == 'POST':
         try:
-            # Brevo envía los datos en formato JSON
+            # Parsear el JSON enviado directamente por el Cloudflare Worker
             data = json.loads(request.body.decode('utf-8'))
 
-            # Extraer campos clave según el payload de Inbound Email de Brevo
-            items = data.get('items', [])
-            if not items and 'From' in data:
-                items = [data]
+            remitente_email = data.get('from', '')
+            destinatario_email = data.get('to', '')
+            asunto = data.get('subject', 'Sin asunto')
+            cuerpo = data.get('text', '')
+            msg_id = data.get('message_id', '')
+            in_reply_to = data.get('in_reply_to', '')
 
-            for item in items:
-                # Obtener remitente (el cliente que responde)
-                remitente_info = item.get('From', {})
-                remitente_email = remitente_info.get('Address') if isinstance(remitente_info, dict) else str(
-                    remitente_info)
+            # Limpiar formato si el correo viene como "Nombre <correo@dominio.com>"
+            if '<' in remitente_email and '>' in remitente_email:
+                remitente_email = remitente_email.split('<')[1].split('>')[0].strip()
 
-                # Obtener destinatario (tu correo corporativo, p. ej. ejecutivo1@portiumgroup.com)
-                destinatarios = item.get('To', [])
-                destinatario_email = destinatarios[0].get('Address') if destinatarios and isinstance(destinatarios[0],
-                                                                                                     dict) else 'contacto@portiumgroup.com'
+            if '<' in destinatario_email and '>' in destinatario_email:
+                destinatario_email = destinatario_email.split('<')[1].split('>')[0].strip()
 
-                asunto = item.get('Subject', 'Sin asunto')
-                cuerpo = item.get('RawTextBody') or item.get('ExtractedMarkdown') or item.get('RawHtmlBody', '')
-                msg_id = item.get('Uuid') or item.get('MessageId', '')
+            # Evitar guardar duplicados si el webhook se reintenta
+            if msg_id and CorreoEnviado.objects.filter(message_id=msg_id).exists():
+                return JsonResponse({'status': 'ok', 'message': 'Correo ya registrado anteriormente'}, status=200)
 
-                # Evitar guardar duplicados si el webhook se dispara dos veces
-                if msg_id and CorreoEnviado.objects.filter(message_id=msg_id).exists():
-                    continue
+            # Guardar la respuesta entrante en el modelo de base de datos
+            CorreoEnviado.objects.create(
+                remitente_correo=remitente_email,
+                destinatario=destinatario_email,
+                asunto=asunto,
+                mensaje=cuerpo,
+                tipo='RECIBIDO',
+                message_id=msg_id,
+                in_reply_to=in_reply_to
+            )
 
-                # Guardar la respuesta entrante en la base de datos
-                CorreoEnviado.objects.create(
-                    remitente_correo=remitente_email,
-                    destinatario=destinatario_email,
-                    asunto=asunto,
-                    mensaje=cuerpo,
-                    tipo='RECIBIDO',
-                    message_id=msg_id
-                )
-
-            return JsonResponse({'status': 'ok', 'message': 'Correo procesado correctamente'}, status=200)
+            return JsonResponse({'status': 'ok', 'message': 'Correo procesado y enlazado correctamente'}, status=200)
 
         except Exception as e:
+            print(f"ERROR EN WEBHOOK DE CLOUDFLARE: {e}")
             return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
 
     return JsonResponse({'status': 'método no permitido'}, status=405)
