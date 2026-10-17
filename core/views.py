@@ -34,6 +34,8 @@ from sib_api_v3_sdk.rest import ApiException
 import json
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
+from django.db import models
+
 
 
 REMITENTES_POR_USUARIO = {
