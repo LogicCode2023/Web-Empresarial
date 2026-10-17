@@ -31,5 +31,7 @@ urlpatterns = [
     path('tramite/detalle/<str:numero_tramite>/', views.detalle_tramite_cliente_view, name='detalle_tramite_cliente'),
     path('panel/redactar-correo/', views.redactar_correo_view, name='redactar_correo'),
     path('api/recibir-correo-webhook/', views.webhook_recibir_correo_view, name='webhook_recibir_correo'),
+    path('bandeja-correos/', views.bandeja_correos, name='bandeja_correos'),
+    path('correo/<int:correo_id>/', views.detalle_correo, name='detalle_correo'),
 ]
 

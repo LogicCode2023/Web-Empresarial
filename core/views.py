@@ -35,7 +35,8 @@ import json
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.db import models
-
+from django.shortcuts import render, get_object_or_404
+from .models import CorreoEnviado
 
 
 REMITENTES_POR_USUARIO = {
@@ -688,3 +689,20 @@ def webhook_recibir_correo_view(request):
             return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
 
     return JsonResponse({'status': 'método no permitido'}, status=405)
+
+@login_required
+def bandeja_correos(request):
+    # Mostrar todos los correos ordenados del más reciente al más antiguo
+    correos = CorreoEnviado.objects.all().order_by('-fecha_envio')
+    return render(request, 'core/bandeja_correos.html', {'correos': correos})
+
+
+@login_required
+def detalle_correo(request, correo_id):
+    correo = get_object_or_404(CorreoEnviado, id=correo_id)
+    # Al abrirlo, si es un correo recibido no leído, lo marcamos como leído automáticamente
+    if correo.tipo == 'RECIBIDO' and not correo.leido:
+        correo.leido = True
+        correo.save()
+
+    return render(request, 'core/detalle_correo_modal.html', {'correo': correo})

@@ -205,23 +205,21 @@ class HistorialDocumentoTrámite(models.Model):
 
 
 class CorreoEnviado(models.Model):
-    TIPO_CHOICES = [
+    TIPO_CHOICES = (
         ('ENVIADO', 'Enviado'),
         ('RECIBIDO', 'Recibido'),
-    ]
+    )
 
-    remitente_usuario = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Enviado por")
-    remitente_correo = models.CharField(max_length=255, verbose_name="Correo remitente")
-    destinatario = models.EmailField(verbose_name="Para")
-    asunto = models.CharField(max_length=255, verbose_name="Asunto")
-    mensaje = models.TextField(verbose_name="Mensaje")
-    archivo_adjunto = models.FileField(upload_to='correos_adjuntos/', null=True, blank=True, verbose_name="Archivo Adjunto")
-    fecha_envio = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de Envío")
-
-    # NUEVO: Para diferenciar correos salientes de respuestas entrantes
-    tipo = models.CharField(max_length=10, choices=TIPO_CHOICES, default='ENVIADO', verbose_name="Tipo de Mensaje")
-    # NUEVO: ID de mensaje para evitar duplicados del webhook
-    message_id = models.CharField(max_length=255, blank=True, null=True, verbose_name="ID de Mensaje")
+    remitente_usuario = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    remitente_correo = models.EmailField()
+    destinatario = models.TextField()
+    asunto = models.CharField(max_length=255)
+    mensaje = models.TextField()
+    archivo_adjunto = models.FileField(upload_to='correos_adjuntos/', null=True, blank=True)
+    fecha_envio = models.DateTimeField(auto_now_add=True)
+    tipo = models.CharField(max_length=20, choices=TIPO_CHOICES, default='ENVIADO')
+    message_id = models.CharField(max_length=255, blank=True, null=True)
+    leido = models.BooleanField(default=True)  # True para enviados, False para los recibidos
 
     def __str__(self):
-        return f"[{self.tipo}] {self.asunto} -> {self.destinatario} ({self.fecha_envio.strftime('%Y-%m-%d %H:%M')})"
+        return f"[{self.tipo}] {self.asunto} - {self.remitente_correo}"
