@@ -35,8 +35,6 @@ import json
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.db import models
-from django.shortcuts import render, get_object_or_404
-from .models import CorreoEnviado
 
 
 REMITENTES_POR_USUARIO = {
@@ -671,13 +669,13 @@ def webhook_recibir_correo_view(request):
             if msg_id and CorreoEnviado.objects.filter(message_id=msg_id).exists():
                 return JsonResponse({'status': 'ok', 'message': 'Correo ya registrado anteriormente'}, status=200)
 
-            # Guardar la respuesta entrante en el modelo de base de datos
+            # Guardar la respuesta entrante como 'RECIBIDO' en el modelo de base de datos
             CorreoEnviado.objects.create(
                 remitente_correo=remitente_email,
                 destinatario=destinatario_email,
                 asunto=asunto,
                 mensaje=cuerpo,
-                tipo='RECIBIDO',
+                tipo='RECIBIDO',  # Corregido a RECIBIDO
                 message_id=msg_id,
                 in_reply_to=in_reply_to
             )
@@ -689,6 +687,7 @@ def webhook_recibir_correo_view(request):
             return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
 
     return JsonResponse({'status': 'método no permitido'}, status=405)
+
 
 @login_required
 def bandeja_correos(request):
