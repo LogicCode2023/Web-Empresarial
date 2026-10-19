@@ -1,20 +1,22 @@
-<div class="modal-header">
-    <h5 class="modal-title fw-bold">{{ correo.asunto }}</h5>
+<div class="modal-header bg-light">
+    <h5 class="modal-title fw-bold text-dark">{{ correo.asunto }}</h5>
     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 </div>
 
 <div class="modal-body">
+    <!-- Información de cabecera del correo -->
     <div class="mb-3 pb-2 border-bottom">
-        <p class="mb-1"><strong>Remitente:</strong> {{ correo.remitente_correo }}</p>
-        <p class="mb-1"><strong>Destinatario:</strong> {{ correo.destinatario }}</p>
+        <p class="mb-1"><strong>Remitente:</strong> <span class="text-secondary">{{ correo.remitente_correo }}</span></p>
+        <p class="mb-1"><strong>Destinatario:</strong> <span class="text-secondary">{{ correo.destinatario }}</span></p>
         <p class="mb-0 text-muted small"><strong>Fecha:</strong> {{ correo.fecha_envio|date:"d/m/Y H:i" }}</p>
     </div>
 
     <!-- Contenido del Mensaje -->
-    <div class="p-3 bg-light rounded border mb-3" style="white-space: pre-wrap;">
+    <div class="p-3 bg-light rounded border mb-3" style="white-space: pre-wrap; word-break: break-word;">
         {{ correo.mensaje }}
     </div>
 
+    <!-- Archivo Adjunto (si existe) -->
     {% if correo.archivo_adjunto %}
         <div class="mb-3">
             <a href="{{ correo.archivo_adjunto.url }}" target="_blank" class="btn btn-sm btn-outline-primary">
@@ -24,7 +26,7 @@
     {% endif %}
 </div>
 
-<div class="modal-footer">
+<div class="modal-footer bg-light">
     {% if correo.tipo == 'RECIBIDO' %}
         <a href="{% url 'redactar_correo' %}?email={{ correo.remitente_correo }}" class="btn btn-primary">
             <i class="bi bi-reply-fill"></i> Responder a este Correo

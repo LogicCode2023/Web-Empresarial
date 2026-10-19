@@ -704,4 +704,4 @@ def detalle_correo(request, correo_id):
         correo.leido = True
         correo.save()
 
-    return render(request, 'core/detalle_correo_modal.html', {'correo': correo})
+    return render(request, 'core/detalle_correo.html', {'correo': correo})
