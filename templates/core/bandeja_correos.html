@@ -11,7 +11,7 @@
     <div class="list-group shadow-sm">
         {% for c in correos %}
             <div class="list-group-item list-group-item-action d-flex justify-content-between align-items-center py-3">
-                <div class="flex-grow-1" style="cursor: pointer;" data-bs-toggle="modal" data-bs-target="#modalCorreo" onclick="cargarDetalle({{ c.id }})">
+                <div class="flex-grow-1" style="cursor: pointer;" onclick="cargarDetalle({{ c.id }})">
                     <!-- Badge de Estado / Alerta -->
                     {% if c.tipo == 'RECIBIDO' and not c.leido %}
                         <span class="badge bg-danger me-2">Nuevo Mensaje</span>
@@ -34,7 +34,7 @@
                     </p>
                 </div>
                 <div>
-                    <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#modalCorreo" onclick="cargarDetalle({{ c.id }})">
+                    <button class="btn btn-sm btn-outline-secondary" onclick="cargarDetalle({{ c.id }})">
                         Ver Hilo
                     </button>
                 </div>
@@ -62,7 +62,7 @@
 
 <script>
 function cargarDetalle(id) {
-    // Limpiar el contenido previo mientras carga
+    // 1. Insertar el spinner de carga en el modal
     document.getElementById('contenidoModalCorreo').innerHTML = `
         <div class="modal-body text-center py-5">
             <div class="spinner-border text-primary" role="status">
@@ -71,16 +71,34 @@ function cargarDetalle(id) {
         </div>
     `;
 
+    // 2. Instanciar y abrir el modal Bootstrap de forma explícita
+    var modalElement = document.getElementById('modalCorreo');
+    var myModal = bootstrap.Modal.getOrCreateInstance(modalElement);
+    myModal.show();
+
+    // 3. Realizar la petición fetch
     fetch(`/correo/${id}/`)
-        .then(response => response.text())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Error al responder el servidor');
+            }
+            return response.text();
+        })
         .then(html => {
             document.getElementById('contenidoModalCorreo').innerHTML = html;
         })
         .catch(error => {
             console.error('Error al cargar detalle:', error);
             document.getElementById('contenidoModalCorreo').innerHTML = `
+                <div class="modal-header">
+                    <h5 class="modal-title text-danger">Error</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
                 <div class="modal-body text-center py-4 text-danger">
-                    Error al cargar los detalles del correo.
+                    No se pudieron cargar los detalles del correo.
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
                 </div>
             `;
         });
