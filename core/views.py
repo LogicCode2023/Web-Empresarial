@@ -693,20 +693,19 @@ def webhook_recibir_correo_view(request):
 @login_required
 def bandeja_correos(request):
     """
-    MODIFICADO: Muestra únicamente los correos principales (raíz), excluyendo respuestas (Re: / RV:)
-    para que la bandeja no se duplique por cada respuesta enviada o recibida.
+    Muestra la bandeja agrupadamente como un correo tradicional.
+    Cualquier correo que te envíe un cliente aparecerá como RECIBIDO (No leído / Leído).
+    Los que tú redactes manualmente aparecerán como ENVIADO.
     """
-    # Filtramos para mostrar solo los correos que NO son respuestas (asunto sin Re: o RV:)
-    correos = CorreoEnviado.objects.exclude(
-        models.Q(asunto__istartswith='Re:') |
-        models.Q(asunto__istartswith='RV:')
-    ).order_by('leido', '-fecha_envio')
+    # 1. Corrección automática en BD para asegurar que lo que enviaron clientes sea RECIBIDO
+    CorreoEnviado.objects.filter(tipo='ENVIADO').exclude(
+        remitente_correo__icontains='portiumgroup.com'
+    ).update(tipo='RECIBIDO')
+
+    # 2. Traer los correos ordenados: primero los no leídos y luego los más recientes
+    correos = CorreoEnviado.objects.all().order_by('leido', '-fecha_envio')
 
     return render(request, 'core/bandeja_correos.html', {'correos': correos})
-
-
-import traceback
-from django.http import HttpResponse
 
 
 @login_required
