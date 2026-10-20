@@ -223,3 +223,11 @@ class CorreoEnviado(models.Model):
 
     def __str__(self):
         return f"[{self.tipo}] {self.asunto} - {self.remitente_correo}"
+
+    class CorreoAdjunto(models.Model):
+        mensaje = models.ForeignKey(CorreoEnviado, on_delete=models.CASCADE, related_name='adjuntos')
+        archivo = models.FileField(upload_to='correos_adjuntos/')
+        nombre_archivo = models.CharField(max_length=255)
+
+        def __str__(self):
+            return self.nombre_archivo
