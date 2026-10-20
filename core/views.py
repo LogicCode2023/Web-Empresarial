@@ -531,8 +531,7 @@ def responder_correo(request, correo_id):
         cuerpo = request.POST.get('cuerpo_respuesta')
         destinatarios_cc = request.POST.get('destinatario_cc', '')  # Recibimos las copias si las hay
 
-        # Lógica para enviar el correo real (usando tu servicio de envío actual o SMTP)
-        # y guardarlo en la base de datos:
+        # Lógica para enviar el correo real y guardarlo en la base de datos:
         nuevo_correo = CorreoEnviado.objects.create(
             remitente_usuario=request.user,
             remitente_correo=request.user.email or "ejecutivo1@portiumgroup.com",
@@ -544,7 +543,7 @@ def responder_correo(request, correo_id):
             message_id=correo_original.message_id  # Mantiene el hilo
         )
 
-        # Manejo de múltiples adjuntos en la respuesta (si los subió)
+        # Manejo de múltiples adjuntos en la respuesta
         archivos = request.FILES.getlist('archivo_respuesta')
         for archivo in archivos:
             CorreoAdjunto.objects.create(
@@ -553,5 +552,7 @@ def responder_correo(request, correo_id):
                 nombre_archivo=archivo.name
             )
 
-        # Redireccionar de vuelta al hilo
-        return redirect('detalle_correo', correo_id=correo_original.id)
+        messages.success(request, "¡Respuesta enviada exitosamente!")
+
+        # REDIRECCIONAR A LA BANDEJA PRINCIPAL (Para recargar la vista completa con CSS)
+        return redirect('bandeja_correos')
