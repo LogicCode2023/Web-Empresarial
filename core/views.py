@@ -1,5 +1,6 @@
 from datetime import timedelta
 import secrets
+import re
 
 from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
@@ -51,6 +52,15 @@ ContactoAliadoFormSet = inlineformset_factory(
     extra=1,
     can_delete=True
 )
+
+
+def limpiar_asunto(asunto):
+    """Elimina cualquier combinación repetida de prefijos RE:, RV:, Fwd:, etc., al inicio del asunto."""
+    if not asunto:
+        return "Sin Asunto"
+    patron = r'^(?:\s*(?:re|rv|fwd|fw)\s*:\s*)+'
+    asunto_limpio = re.sub(patron, '', asunto, flags=re.IGNORECASE).strip()
+    return asunto_limpio if asunto_limpio else "Sin Asunto"
 
 
 def signup_view(request):
@@ -445,19 +455,9 @@ def bandeja_correos(request):
 
     hilos_dict = {}
     for correo in todos_los_correos:
-        asunto_limpio = (correo.asunto or "").strip()
-        while True:
-            lower_asunto = asunto_limpio.lower()
-            if lower_asunto.startswith(('re:', 'rv:', 'fwd:')):
-                asunto_limpio = asunto_limpio[3:].strip()
-            else:
-                break
-
-        if not asunto_limpio:
-            asunto_limpio = "Sin Asunto"
-
-        correo_externo = correo.remitente_correo if correo.tipo == 'RECIBIDO' else correo.destinatario
-        clave_hilo = f"{asunto_limpio.lower()}_{correo_externo.lower()}"
+        # Limpiar asunto base para evitar duplicidades de hilos por prefijos RE múltiples
+        asunto_base = limpiar_asunto(correo.asunto).lower()
+        clave_hilo = asunto_base
 
         if clave_hilo not in hilos_dict:
             hilos_dict[clave_hilo] = {
@@ -493,19 +493,11 @@ def detalle_correo(request, correo_id):
             correo_principal.leido = True
             correo_principal.save()
 
-        asunto_limpio = (correo_principal.asunto or "").strip()
-        while True:
-            lower_asunto = asunto_limpio.lower()
-            if lower_asunto.startswith(('re:', 'rv:', 'fwd:')):
-                asunto_limpio = asunto_limpio[3:].strip()
-            else:
-                break
+        asunto_base = limpiar_asunto(correo_principal.asunto)
 
-        correo_externo = correo_principal.remitente_correo if correo_principal.tipo == 'RECIBIDO' else correo_principal.destinatario
-
+        # Buscar todo el hilo consolidado por el asunto base limpio
         hilo_completo = CorreoEnviado.objects.filter(
-            models.Q(asunto__icontains=asunto_limpio) &
-            (models.Q(destinatario__icontains=correo_externo) | models.Q(remitente_correo__icontains=correo_externo))
+            asunto__icontains=asunto_base
         ).order_by('fecha_envio')
 
         for m in hilo_completo:
@@ -558,19 +550,22 @@ def responder_correo(request, correo_id):
         else:
             destinatario_principal = correo_original.destinatario
 
-        # 3. Guardar el correo en la base de datos con el usuario y correo activo
+        # 3. Formatear un asunto limpio y estandarizado con un único "RE: "
+        asunto_limpio = f"RE: {limpiar_asunto(correo_original.asunto)}"
+
+        # 4. Guardar el correo en la base de datos con el usuario y correo activo
         nuevo_correo = CorreoEnviado.objects.create(
             remitente_usuario=request.user if request.user.is_authenticated else None,
             remitente_correo=correo_salida_limpio,
             destinatario=destinatario_principal,
             destinatario_cc=destinatarios_cc_raw,
-            asunto=f"RE: {correo_original.asunto.replace('RE: ', '')}",
+            asunto=asunto_limpio,
             mensaje=cuerpo,
             tipo='ENVIADO',
             message_id=correo_original.message_id
         )
 
-        # 4. Guardar archivos adjuntos múltiples
+        # 5. Guardar archivos adjuntos múltiples
         archivos = request.FILES.getlist('archivo_respuesta')
         for archivo in archivos:
             CorreoAdjunto.objects.create(
@@ -579,7 +574,7 @@ def responder_correo(request, correo_id):
                 nombre_archivo=archivo.name
             )
 
-        # 5. Enviar el correo mediante Brevo (usando el remitente dinámico)
+        # 6. Enviar el correo mediante Brevo (usando el remitente dinámico)
         try:
             configuration = sib_api_v3_sdk.Configuration()
             configuration.api_key['api-key'] = os.environ.get('BREVO_API_KEY')
@@ -613,7 +608,7 @@ def responder_correo(request, correo_id):
                 reply_to={"email": correo_salida_limpio, "name": nombre_remitente},
                 to=to_dest,
                 cc=cc_dest,
-                subject=nuevo_correo.asunto,
+                subject=asunto_limpio,
                 text_content=cuerpo,
                 attachment=attachments
             )
