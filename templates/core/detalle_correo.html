@@ -9,7 +9,7 @@
 <div class="modal-body bg-light" style="max-height: 55vh; overflow-y: auto;">
 
     <!-- Mensaje principal del hilo -->
-    <div class="card mb-3 shadow-sm border-0">
+    <div class="card mb-3 shadow-sm {% if correo.tipo == 'RECIBIDO' %}border-success border-start border-4{% else %}border-primary border-start border-4{% endif %}">
         <div class="card-body">
             <div class="d-flex justify-content-between align-items-center mb-2">
                 <span class="badge {% if correo.tipo == 'RECIBIDO' %}bg-success{% else %}bg-primary{% endif %}">
@@ -42,18 +42,32 @@
         </div>
     </div>
 
-    <!-- Historial de respuestas previas -->
+    <!-- Historial de respuestas previas e hilos relacionados -->
     {% if respuestas %}
         {% for r in respuestas %}
-            <div class="card mb-3 shadow-sm border-0 ms-md-4">
+            <div class="card mb-3 shadow-sm {% if r.tipo == 'RECIBIDO' %}border-success border-start border-4 ms-md-2{% else %}border-secondary border-start border-4 ms-md-4{% endif %}">
                 <div class="card-body bg-white">
                     <div class="d-flex justify-content-between align-items-center mb-2">
-                        <span class="badge bg-secondary">Respuesta</span>
+                        <span class="badge {% if r.tipo == 'RECIBIDO' %}bg-success{% else %}bg-secondary{% endif %}">
+                            {{ r.tipo|default:"RESPUESTA" }}
+                        </span>
                         <small class="text-muted">{{ r.fecha_envio|date:"d/m/Y H:i" }}</small>
                     </div>
+
+                    <p class="mb-1 text-muted small">
+                        {% if r.tipo == 'RECIBIDO' %}
+                            De: <strong>{{ r.remitente_correo }}</strong>
+                        {% else %}
+                            Para: <strong>{{ r.destinatario }}</strong>
+                        {% endif %}
+                    </p>
+
+                    <hr class="my-2">
+
                     <div class="text-dark py-2" style="white-space: pre-wrap; word-break: break-word; font-size: 0.95rem;">
                         {{ r.mensaje|default:"" }}
                     </div>
+
                     {% if r.archivo_adjunto %}
                         <div class="mt-2 p-2 bg-light border rounded d-inline-block">
                             <a href="{{ r.archivo_adjunto.url }}" target="_blank" class="text-decoration-none small fw-bold text-primary">
@@ -68,7 +82,7 @@
 
 </div>
 
-<!-- Formulario de Respuesta y Subida de Archivos -->
+<!-- Formulario de Respuesta Rápida -->
 <div class="modal-footer bg-white border-top p-3 d-block">
     <form method="POST" action="{% url 'responder_correo' correo.id %}" enctype="multipart/form-data" class="w-100">
         {% csrf_token %}
