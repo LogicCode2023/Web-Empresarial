@@ -11,6 +11,7 @@ from django.core.mail import EmailMessage, send_mail
 from django.forms import inlineformset_factory
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
+from django.core.files.base import ContentFile
 
 from .forms import (
     AliadoEstrategicoForm,
@@ -24,7 +25,7 @@ from .forms import (
     RepresentacionForm,
     TransporteLocalForm,
 )
-from .models import AliadoEstrategico, ContactoAliado, HistorialDocumentoTrámite, Tramite, CorreoEnviado
+from .models import AliadoEstrategico, ContactoAliado, HistorialDocumentoTrámite, Tramite, CorreoEnviado, CorreoAdjunto
 from django.conf import settings
 from .forms import CorreoManualForm
 import os
@@ -352,12 +353,10 @@ def redactar_correo_view(request):
 @csrf_exempt
 def webhook_recibir_correo_view(request):
     """
-    Endpoint robusto para recibir respuestas de Cloudflare Worker o Brevo.
-    Acepta tanto JSON como Form-Data.
+    Endpoint robusto para recibir respuestas de Cloudflare Worker o Brevo con soporte para adjuntos.
     """
     if request.method == 'POST':
         try:
-            # 1. Intentar parsear JSON o Form-Data según lo enviado por el Worker
             if request.content_type == 'application/json' or request.body:
                 try:
                     data = json.loads(request.body.decode('utf-8'))
@@ -373,6 +372,7 @@ def webhook_recibir_correo_view(request):
             asunto = data.get('subject', 'Sin asunto') or data.get('Subject', 'Sin asunto')
             cuerpo = data.get('text', '') or data.get('html', '') or data.get('body-plain', '')
             msg_id = data.get('message_id', '') or data.get('Message-ID', '')
+            attachments = data.get('attachments', [])
 
             # Convertir a texto limpio si viene en lista o dict
             if isinstance(remitente_email, list):
@@ -383,7 +383,6 @@ def webhook_recibir_correo_view(request):
             remitente_email = str(remitente_email)
             destinatario_email = str(destinatario_email)
 
-            # Extraer email si viene en formato "Nombre <correo@dominio.com>"
             if '<' in remitente_email and '>' in remitente_email:
                 remitente_email = remitente_email.split('<')[1].split('>')[0].strip()
 
@@ -393,11 +392,10 @@ def webhook_recibir_correo_view(request):
             if not remitente_email:
                 return JsonResponse({'status': 'error', 'message': 'Falta el correo remitente'}, status=400)
 
-            # Evitar duplicados
             if msg_id and CorreoEnviado.objects.filter(message_id=msg_id).exists():
                 return JsonResponse({'status': 'ok', 'message': 'Ya registrado previamente'}, status=200)
 
-            # Guardar el correo entrante con estado RECIBIDO
+            # 1. Crear el registro del mensaje entrante
             nuevo_correo = CorreoEnviado.objects.create(
                 remitente_correo=remitente_email,
                 destinatario=destinatario_email or 'contacto@portiumgroup.com',
@@ -408,8 +406,26 @@ def webhook_recibir_correo_view(request):
                 message_id=msg_id
             )
 
+            # 2. Procesar y guardar los archivos adjuntos recibidos desde el Worker
+            for att in attachments:
+                filename = att.get('filename')
+                b64_content = att.get('content_base64')
+
+                if filename and b64_content:
+                    try:
+                        file_data = base64.b64decode(b64_content)
+                        file_file = ContentFile(file_data, name=filename)
+
+                        CorreoAdjunto.objects.create(
+                            mensaje=nuevo_correo,
+                            archivo=file_file,
+                            nombre_archivo=filename
+                        )
+                    except Exception as ex_att:
+                        print(f"Error procesando adjunto {filename}: {ex_att}")
+
             print(f"CORREO ENTRANTE GUARDADO CON ÉXITO: ID {nuevo_correo.id} DE {remitente_email}")
-            return JsonResponse({'status': 'ok', 'message': 'Correo registrado correctamente'}, status=200)
+            return JsonResponse({'status': 'ok', 'message': 'Correo registrado correctamente con adjuntos'}, status=200)
 
         except Exception as e:
             error_msg = traceback.format_exc()
@@ -473,12 +489,10 @@ def detalle_correo(request, correo_id):
     try:
         correo_principal = get_object_or_404(CorreoEnviado, id=correo_id)
 
-        # Si el correo principal es recibido y no leído, lo marcamos como leído
         if correo_principal.tipo == 'RECIBIDO' and not correo_principal.leido:
             correo_principal.leido = True
             correo_principal.save()
 
-        # Extraer el asunto base limpio (quitando Re:, RV:, Fwd:)
         asunto_limpio = (correo_principal.asunto or "").strip()
         while True:
             lower_asunto = asunto_limpio.lower()
@@ -487,16 +501,13 @@ def detalle_correo(request, correo_id):
             else:
                 break
 
-        # Identificar el correo del cliente externo involucrado en este hilo
         correo_externo = correo_principal.remitente_correo if correo_principal.tipo == 'RECIBIDO' else correo_principal.destinatario
 
-        # Traer TODOS los mensajes de este hilo (tanto recibidos del cliente como enviados por ti)
         hilo_completo = CorreoEnviado.objects.filter(
             models.Q(asunto__icontains=asunto_limpio) &
             (models.Q(destinatario__icontains=correo_externo) | models.Q(remitente_correo__icontains=correo_externo))
         ).order_by('fecha_envio')
 
-        # Marcar como leídos todos los mensajes recibidos pendientes de este hilo
         for m in hilo_completo:
             if m.tipo == 'RECIBIDO' and not m.leido:
                 m.leido = True
@@ -504,7 +515,7 @@ def detalle_correo(request, correo_id):
 
         context = {
             'correo': correo_principal,
-            'respuestas': hilo_completo  # Contiene toda la conversación integrada
+            'respuestas': hilo_completo
         }
         return render(request, 'core/detalle_correo.html', context)
 
