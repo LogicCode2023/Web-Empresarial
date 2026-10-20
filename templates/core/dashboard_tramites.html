@@ -4,19 +4,11 @@
 {% block content %}
 <div style="max-width: 1200px; margin: 30px auto; padding: 0 20px; font-family: inherit;">
 
-    <!-- CABECERA DEL PANEL CON BOTONES DE ACCIÓN GLOBAL -->
+    <!-- CABECERA DEL PANEL -->
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px;">
         <h2 style="color: #0d2346; font-size: 1.8rem; font-weight: 700; margin: 0;">
             Gestión Integral de Trámites
         </h2>
-
-        <!-- BOTÓN ACCESO DIRECTO A REDACTAR CORREO -->
-        <div>
-            <a href="{% url 'redactar_correo' %}"
-               style="background: #0284c7; color: #ffffff; padding: 8px 16px; border-radius: 6px; text-decoration: none; font-size: 0.9rem; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 2px 5px rgba(2, 132, 199, 0.3);">
-                ✉️ Redactar Correo
-            </a>
-        </div>
     </div>
 
     <div style="display: grid; grid-template-columns: 260px 1fr; gap: 25px;">
@@ -141,7 +133,7 @@
                                     {{ t.fecha_creacion|date:"d M Y, H:i" }}
                                 </td>
 
-                                <!-- Acciones (Gestionar + Redactar Correo) -->
+                                <!-- Acciones (Gestionar + Redactar Correo directo al cliente) -->
                                 <td style="padding: 14px; text-align: center;">
                                     <div style="display: flex; gap: 6px; justify-content: center; align-items: center;">
                                         <a href="{% url 'gestionar_tramite' t.id %}"
