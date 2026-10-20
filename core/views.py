@@ -43,7 +43,6 @@ REMITENTES_POR_USUARIO = {
     'juansebas': 'Gerencia Portium <gerencia@portiumgroup.com>',
 }
 
-# Definición del formset para gestionar los contactos múltiples de cada aliado
 ContactoAliadoFormSet = inlineformset_factory(
     AliadoEstrategico,
     ContactoAliado,
@@ -52,8 +51,6 @@ ContactoAliadoFormSet = inlineformset_factory(
     can_delete=True
 )
 
-
-# Create your views here.
 
 def signup_view(request):
     if request.method == 'POST':
@@ -79,7 +76,6 @@ def obtener_o_crear_usuario_anonimo(request, email, nombre_completo=None):
         return None
 
     user = User.objects.filter(email__iexact=email).first()
-
     if user:
         return user
 
@@ -96,7 +92,6 @@ def obtener_o_crear_usuario_anonimo(request, email, nombre_completo=None):
         password=password,
         first_name=first_name
     )
-
     return user
 
 
@@ -122,7 +117,6 @@ def crear_tramite_view(request, tipo_servicio):
         if form.is_valid():
             email = request.POST.get('email')
             nombre_contacto = request.POST.get('nombre_contacto') or request.POST.get('nombre')
-
             cliente = obtener_o_crear_usuario_anonimo(request, email, nombre_contacto)
 
             tramite = Tramite.objects.create(
@@ -158,6 +152,13 @@ def exito_tramite_view(request, numero_tramite):
 
 def home(request):
     return render(request, 'core/home.html')
+
+
+def solicitud_busqueda(request):
+    producto_inicial = request.GET.get('producto', '')
+    if producto_inicial:
+        return redirect(f"/tramite/busqueda/?producto={producto_inicial}")
+    return redirect('crear_tramite', tipo_servicio='busqueda')
 
 
 def nosotros(request):
@@ -223,8 +224,7 @@ class CustomLoginView(LoginView):
 @staff_member_required
 def gestionar_tramite_view(request, tramite_id):
     tramite = get_object_or_404(Tramite, id=tramite_id)
-    context = {'tramite': tramite}
-    return render(request, 'core/gestionar_tramite.html', context)
+    return render(request, 'core/gestionar_tramite.html', {'tramite': tramite})
 
 
 @staff_member_required
@@ -294,7 +294,6 @@ def redactar_correo_view(request):
         form = CorreoManualForm(request.POST, request.FILES)
         if form.is_valid():
             destinatario_raw = form.cleaned_data['destinatario']
-            cc_raw = form.cleaned_data.get('cc', '')
             asunto = form.cleaned_data['asunto']
             mensaje = form.cleaned_data['mensaje']
             archivo = form.cleaned_data.get('archivo_adjunto')
@@ -332,7 +331,7 @@ def redactar_correo_view(request):
                     leido=True
                 )
 
-                messages.success(request, f"¡Correo enviado exitosamente!")
+                messages.success(request, "¡Correo enviado exitosamente!")
                 return redirect(f"{request.path}?email={destinatarios[0] if destinatarios else ''}")
             except Exception as e:
                 messages.error(request, f"Error al enviar: {e}")
@@ -384,10 +383,6 @@ def webhook_recibir_correo_view(request):
 
 @login_required
 def bandeja_correos(request):
-    """
-    Bandeja unificada real: agrupa mensajes por hilo (limpiando Re:, RV: y asociando al cliente).
-    """
-    # 1. Corrección automática en BD para registros antiguos mal etiquetados
     CorreoEnviado.objects.filter(tipo='ENVIADO').exclude(
         remitente_correo__icontains='portiumgroup.com'
     ).update(tipo='RECIBIDO')
@@ -397,8 +392,6 @@ def bandeja_correos(request):
     hilos_dict = {}
     for correo in todos_los_correos:
         asunto_limpio = (correo.asunto or "").strip()
-
-        # Limpieza agresiva de prefijos de respuesta para unificar el hilo
         while True:
             lower_asunto = asunto_limpio.lower()
             if lower_asunto.startswith(('re:', 'rv:', 'fwd:')):
@@ -409,7 +402,6 @@ def bandeja_correos(request):
         if not asunto_limpio:
             asunto_limpio = "Sin Asunto"
 
-        # Identificador único del hilo basado en el asunto limpio y el correo externo involucrado
         correo_externo = correo.remitente_correo if correo.tipo == 'RECIBIDO' else correo.destinatario
         clave_hilo = f"{asunto_limpio.lower()}_{correo_externo.lower()}"
 
@@ -433,8 +425,7 @@ def bandeja_correos(request):
         c.es_recibido_hilo = datos['es_recibido']
         lista_hilos.append(c)
 
-    # Ordenar: primero los que tienen no leídos, luego por fecha descendente
-    lista_hilos.sort(key=lambda x: (not x.tiene_no_leidos, x.fecha_envio), reverse=True)
+    lista_hilos.sort(key=lambda x: x.fecha_envio, reverse=True)
 
     return render(request, 'core/bandeja_correos.html', {'correos': lista_hilos})
 
@@ -458,7 +449,6 @@ def detalle_correo(request, correo_id):
 
         correo_externo = correo.remitente_correo if correo.tipo == 'RECIBIDO' else correo.destinatario
 
-        # Buscar todas las respuestas del hilo completo por asunto limpio y correo externo
         respuestas = CorreoEnviado.objects.filter(
             models.Q(asunto__icontains=asunto_limpio) &
             (models.Q(destinatario__icontains=correo_externo) | models.Q(remitente_correo__icontains=correo_externo))
