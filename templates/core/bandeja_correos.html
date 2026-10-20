@@ -47,9 +47,9 @@
     </div>
 </div>
 
-<!-- Modal Flotante para el Hilo y Formulario de Respuesta -->
+<!-- Modal Flotante Ampliado (modal-xl) -->
 <div class="modal fade" id="modalCorreo" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content" id="contenidoModalCorreo">
             <div class="modal-body text-center py-5">
                 <div class="spinner-border text-primary" role="status">
@@ -65,7 +65,7 @@ function cargarDetalle(id) {
     var modalElement = document.getElementById('modalCorreo');
     var contenidoModal = document.getElementById('contenidoModalCorreo');
 
-    // 1. Insertar el spinner de carga en el modal inmediatamente
+    // 1. Insertar el spinner de carga
     contenidoModal.innerHTML = `
         <div class="modal-body text-center py-5">
             <div class="spinner-border text-primary" role="status">
@@ -74,7 +74,7 @@ function cargarDetalle(id) {
         </div>
     `;
 
-    // 2. Forzar la apertura visual del modal mediante DOM/CSS
+    // 2. Mostrar el modal
     modalElement.classList.add('show');
     modalElement.style.display = 'block';
     modalElement.removeAttribute('aria-hidden');
@@ -87,7 +87,7 @@ function cargarDetalle(id) {
         document.body.appendChild(backdrop);
     }
 
-    // 3. Realizar la petición fetch al servidor
+    // 3. Cargar el HTML dinámico
     fetch(`/correo/${id}/`)
         .then(response => {
             if (!response.ok) {
