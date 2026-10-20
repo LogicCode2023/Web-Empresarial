@@ -11,7 +11,7 @@
     <div class="list-group shadow-sm">
         {% for c in correos %}
             <div class="list-group-item list-group-item-action d-flex justify-content-between align-items-center py-3">
-                <div class="flex-grow-1" style="cursor: pointer;" data-bs-toggle="modal" data-bs-target="#modalCorreo" onclick="cargarDetalle({{ c.id }})">
+                <div class="flex-grow-1" style="cursor: pointer;" onclick="cargarDetalle({{ c.id }})">
                     <!-- Badge de Estado / Alerta -->
                     {% if c.tipo == 'RECIBIDO' and not c.leido %}
                         <span class="badge bg-danger me-2">Nuevo Mensaje</span>
@@ -34,7 +34,7 @@
                     </p>
                 </div>
                 <div>
-                    <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#modalCorreo" onclick="cargarDetalle({{ c.id }})">
+                    <button class="btn btn-sm btn-outline-secondary" onclick="cargarDetalle({{ c.id }})">
                         Ver Hilo
                     </button>
                 </div>
@@ -62,8 +62,11 @@
 
 <script>
 function cargarDetalle(id) {
-    // 1. Insertar el spinner de carga en el modal mientras llega la respuesta
-    document.getElementById('contenidoModalCorreo').innerHTML = `
+    var modalElement = document.getElementById('modalCorreo');
+    var contenidoModal = document.getElementById('contenidoModalCorreo');
+
+    // 1. Insertar el spinner de carga en el modal inmediatamente
+    contenidoModal.innerHTML = `
         <div class="modal-body text-center py-5">
             <div class="spinner-border text-primary" role="status">
                 <span class="visually-hidden">Cargando conversación...</span>
@@ -71,7 +74,20 @@ function cargarDetalle(id) {
         </div>
     `;
 
-    // 2. Petición fetch directa sin referencias explícitas a la clase 'bootstrap'
+    // 2. Forzar la apertura visual del modal mediante DOM/CSS
+    modalElement.classList.add('show');
+    modalElement.style.display = 'block';
+    modalElement.removeAttribute('aria-hidden');
+    modalElement.setAttribute('aria-modal', 'true');
+    document.body.classList.add('modal-open');
+
+    if (!document.querySelector('.modal-backdrop')) {
+        var backdrop = document.createElement('div');
+        backdrop.className = 'modal-backdrop fade show';
+        document.body.appendChild(backdrop);
+    }
+
+    // 3. Realizar la petición fetch al servidor
     fetch(`/correo/${id}/`)
         .then(response => {
             if (!response.ok) {
@@ -80,23 +96,41 @@ function cargarDetalle(id) {
             return response.text();
         })
         .then(html => {
-            document.getElementById('contenidoModalCorreo').innerHTML = html;
+            contenidoModal.innerHTML = html;
         })
         .catch(error => {
             console.error('Error al cargar detalle:', error);
-            document.getElementById('contenidoModalCorreo').innerHTML = `
+            contenidoModal.innerHTML = `
                 <div class="modal-header">
                     <h5 class="modal-title text-danger">Error</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" onclick="cerrarModalPersonalizado()"></button>
                 </div>
                 <div class="modal-body text-center py-4 text-danger">
                     No se pudieron cargar los detalles del correo.
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" onclick="cerrarModalPersonalizado()">Cerrar</button>
                 </div>
             `;
         });
 }
+
+function cerrarModalPersonalizado() {
+    var modalElement = document.getElementById('modalCorreo');
+    modalElement.classList.remove('show');
+    modalElement.style.display = 'none';
+    modalElement.setAttribute('aria-hidden', 'true');
+    document.body.classList.remove('modal-open');
+    var backdrop = document.querySelector('.modal-backdrop');
+    if (backdrop) {
+        backdrop.remove();
+    }
+}
+
+document.addEventListener('click', function(event) {
+    if (event.target.matches('[data-bs-dismiss="modal"]') || event.target.closest('[data-bs-dismiss="modal"]')) {
+        cerrarModalPersonalizado();
+    }
+});
 </script>
 {% endblock %}
