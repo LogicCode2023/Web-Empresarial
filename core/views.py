@@ -704,4 +704,73 @@ def detalle_correo(request, correo_id):
         correo.leido = True
         correo.save()
 
-    return render(request, 'core/detalle_correo.html', {'correo': correo})
+    # Buscar mensajes anteriores o relacionados que pertenezcan al mismo hilo (por asunto o email)
+    respuestas = CorreoEnviado.objects.filter(
+        models.Q(asunto__icontains=correo.asunto.replace("Re: ", "").replace("RV: ", "")) |
+        models.Q(destinatario__icontains=correo.remitente_correo) |
+        models.Q(remitente_correo__icontains=correo.destinatario)
+    ).exclude(id=correo.id).order_by('fecha_envio')
+
+    context = {
+        'correo': correo,
+        'respuestas': respuestas
+    }
+    return render(request, 'core/detalle_correo.html', context)
+
+
+@login_required
+def responder_correo_view(request, correo_id):
+    correo_origen = get_object_or_404(CorreoEnviado, id=correo_id)
+
+    if request.method == 'POST':
+        cuerpo_respuesta = request.POST.get('cuerpo_respuesta', '').strip()
+        archivo_respuesta = request.FILES.get('archivo_respuesta')
+
+        # Determinar el destinatario correcto para la respuesta
+        destinatario = correo_origen.remitente_correo if correo_origen.tipo == 'RECIBIDO' else correo_origen.destinatario
+        asunto = f"Re: {correo_origen.asunto}" if not correo_origen.asunto.startswith("Re:") else correo_origen.asunto
+
+        username_actual = request.user.username.lower()
+        remitente_correo = REMITENTES_POR_USUARIO.get(username_actual, 'contacto@portiumgroup.com')
+
+        if cuerpo_respuesta:
+            try:
+                # Configurar Brevo para el envío rápido
+                configuration = sib_api_v3_sdk.Configuration()
+                configuration.api_key['api-key'] = os.environ.get('BREVO_API_KEY')
+                api_instance = sib_api_v3_sdk.TransactionalEmailsApi(sib_api_v3_sdk.ApiClient(configuration))
+
+                attachments = None
+                if archivo_respuesta:
+                    contenido_base64 = base64.b64encode(archivo_respuesta.read()).decode('utf-8')
+                    attachments = [{
+                        "content": contenido_base64,
+                        "name": archivo_respuesta.name
+                    }]
+
+                send_smtp_email = sib_api_v3_sdk.SendSmtpEmail(
+                    sender={"name": "Portium Group", "email": "contacto@portiumgroup.com"},
+                    to=[{"email": destinatario}],
+                    subject=asunto,
+                    text_content=cuerpo_respuesta,
+                    attachment=attachments
+                )
+                api_instance.send_transac_email(send_smtp_email)
+
+                # Registrar la respuesta enviada en la base de datos
+                CorreoEnviado.objects.create(
+                    remitente_usuario=request.user,
+                    remitente_correo=remitente_correo,
+                    destinatario=destinatario,
+                    asunto=asunto,
+                    mensaje=cuerpo_respuesta,
+                    archivo_adjunto=archivo_respuesta,
+                    tipo='ENVIADO'
+                )
+                messages.success(request, "Respuesta enviada exitosamente.")
+            except Exception as e:
+                print(f"Error al enviar respuesta: {e}")
+                messages.error(request, f"No se pudo enviar la respuesta: {e}")
+
+    return redirect('bandeja_correos')
+
