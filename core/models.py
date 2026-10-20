@@ -212,6 +212,7 @@ class CorreoEnviado(models.Model):
     remitente_usuario = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
     remitente_correo = models.EmailField()
     destinatario = models.TextField()
+    destinatario_cc = models.TextField(blank=True, null=True)  # <-- NUEVO CAMPO PARA COPIAS
     asunto = models.CharField(max_length=255)
     mensaje = models.TextField()
     archivo_adjunto = models.FileField(upload_to='correos_adjuntos/', null=True, blank=True)

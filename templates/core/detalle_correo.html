@@ -29,6 +29,9 @@
                     <div class="mb-2 p-2 bg-light rounded text-muted small border">
                         <div><strong>De:</strong> {{ m.remitente_correo }}</div>
                         <div><strong>Para:</strong> {{ m.destinatario }}</div>
+                        {% if m.destinatario_cc %}
+                            <div><strong>CC:</strong> {{ m.destinatario_cc }}</div>
+                        {% endif %}
                     </div>
 
                     <hr class="my-2">
@@ -80,6 +83,9 @@
                 <div class="mb-2 p-2 bg-light rounded text-muted small border">
                     <div><strong>De:</strong> {{ correo.remitente_correo }}</div>
                     <div><strong>Para:</strong> {{ correo.destinatario }}</div>
+                    {% if correo.destinatario_cc %}
+                        <div><strong>CC:</strong> {{ correo.destinatario_cc }}</div>
+                    {% endif %}
                 </div>
 
                 <hr class="my-2">
@@ -123,15 +129,27 @@
 <div class="modal-footer bg-white border-top p-3 d-block">
     <form method="POST" action="{% url 'responder_correo' correo.id %}" enctype="multipart/form-data" class="w-100">
         {% csrf_token %}
+
+        <!-- Opción desplegable para agregar CC (Copia) -->
+        <div class="mb-2">
+            <a class="text-decoration-none small text-muted fw-bold" data-bs-toggle="collapse" href="#ccCollapse" role="button" aria-expanded="false" aria-controls="ccCollapse">
+                <i class="bi bi-plus-circle me-1"></i> Agregar Copia (CC)
+            </a>
+            <div class="collapse mt-2" id="ccCollapse">
+                <input type="text" name="destinatario_cc" class="form-control form-control-sm" placeholder="correo1@ejemplo.com, correo2@ejemplo.com">
+            </div>
+        </div>
+
         <div class="mb-2">
             <textarea name="cuerpo_respuesta" class="form-control" rows="2" placeholder="Escribe tu respuesta aquí..." required style="resize: none;"></textarea>
         </div>
+
         <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
             <div class="d-flex align-items-center flex-grow-1">
                 <label for="archivo_respuesta" class="form-label text-muted small mb-0 me-2 fw-bold text-nowrap">
                     <i class="bi bi-paperclip"></i> Adjuntar documento:
                 </label>
-                <input type="file" name="archivo_respuesta" class="form-control form-control-sm" id="archivo_respuesta">
+                <input type="file" name="archivo_respuesta" class="form-control form-control-sm" id="archivo_respuesta" multiple>
             </div>
             <div class="d-flex gap-2">
                 <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal" onclick="cerrarModalPersonalizado()">Cerrar</button>

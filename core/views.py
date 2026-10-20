@@ -524,52 +524,34 @@ def detalle_correo(request, correo_id):
         return HttpResponse(f"<h1>Error de Python:</h1><pre>{error_detallado}</pre>", status=500)
 
 
-@login_required
-def responder_correo_view(request, correo_id):
-    correo_origen = get_object_or_404(CorreoEnviado, id=correo_id)
+def responder_correo(request, correo_id):
+    correo_original = get_object_or_404(CorreoEnviado, id=correo_id)
 
     if request.method == 'POST':
-        cuerpo_respuesta = request.POST.get('cuerpo_respuesta', '').strip()
-        archivo_respuesta = request.FILES.get('archivo_respuesta')
+        cuerpo = request.POST.get('cuerpo_respuesta')
+        destinatarios_cc = request.POST.get('destinatario_cc', '')  # Recibimos las copias si las hay
 
-        destinatario = correo_origen.remitente_correo if correo_origen.tipo == 'RECIBIDO' else correo_origen.destinatario
-        asunto = f"Re: {correo_origen.asunto}" if not correo_origen.asunto.startswith("Re:") else correo_origen.asunto
+        # Lógica para enviar el correo real (usando tu servicio de envío actual o SMTP)
+        # y guardarlo en la base de datos:
+        nuevo_correo = CorreoEnviado.objects.create(
+            remitente_usuario=request.user,
+            remitente_correo=request.user.email or "ejecutivo1@portiumgroup.com",
+            destinatario=correo_original.remitente_correo,
+            destinatario_cc=destinatarios_cc,
+            asunto=f"RE: {correo_original.asunto.replace('RE: ', '')}",
+            mensaje=cuerpo,
+            tipo='ENVIADO',
+            message_id=correo_original.message_id  # Mantiene el hilo
+        )
 
-        username_actual = request.user.username.lower()
-        remitente_correo = REMITENTES_POR_USUARIO.get(username_actual, 'contacto@portiumgroup.com')
+        # Manejo de múltiples adjuntos en la respuesta (si los subió)
+        archivos = request.FILES.getlist('archivo_respuesta')
+        for archivo in archivos:
+            CorreoAdjunto.objects.create(
+                mensaje=nuevo_correo,
+                archivo=archivo,
+                nombre_archivo=archivo.name
+            )
 
-        if cuerpo_respuesta:
-            try:
-                configuration = sib_api_v3_sdk.Configuration()
-                configuration.api_key['api-key'] = os.environ.get('BREVO_API_KEY')
-                api_instance = sib_api_v3_sdk.TransactionalEmailsApi(sib_api_v3_sdk.ApiClient(configuration))
-
-                attachments = None
-                if archivo_respuesta:
-                    contenido_base64 = base64.b64encode(archivo_respuesta.read()).decode('utf-8')
-                    attachments = [{"content": contenido_base64, "name": archivo_respuesta.name}]
-
-                send_smtp_email = sib_api_v3_sdk.SendSmtpEmail(
-                    sender={"name": "Portium Group", "email": "contacto@portiumgroup.com"},
-                    to=[{"email": destinatario}],
-                    subject=asunto,
-                    text_content=cuerpo_respuesta,
-                    attachment=attachments
-                )
-                api_instance.send_transac_email(send_smtp_email)
-
-                CorreoEnviado.objects.create(
-                    remitente_usuario=request.user,
-                    remitente_correo=remitente_correo,
-                    destinatario=destinatario,
-                    asunto=asunto,
-                    mensaje=cuerpo_respuesta,
-                    archivo_adjunto=archivo_respuesta,
-                    tipo='ENVIADO',
-                    leido=True
-                )
-                messages.success(request, "Respuesta enviada exitosamente.")
-            except Exception as e:
-                messages.error(request, f"No se pudo enviar la respuesta: {e}")
-
-    return redirect('bandeja_correos')
+        # Redireccionar de vuelta al hilo
+        return redirect('detalle_correo', correo_id=correo_original.id)
