@@ -38,14 +38,31 @@
                         {{ m.mensaje|default:"(Sin mensaje)" }}
                     </div>
 
-                    <!-- Archivo adjunto -->
-                    {% if m.archivo_adjunto %}
+                    <!-- Archivos adjuntos múltiples (Modelo CorreoAdjunto) -->
+                    {% if m.adjuntos.all %}
+                        <div class="mt-3 pt-2 border-top">
+                            <small class="text-muted fw-bold d-block mb-1"><i class="bi bi-paperclip"></i> Archivos adjuntos:</small>
+                            <div class="d-flex flex-wrap gap-2">
+                                {% for adjunto in m.adjuntos.all %}
+                                    <div class="p-2 bg-light border rounded">
+                                        <a href="{{ adjunto.archivo.url }}" target="_blank" class="text-decoration-none small fw-bold text-primary text-truncate d-inline-block" style="max-width: 250px;">
+                                            {{ adjunto.nombre_archivo }}
+                                        </a>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    {% endif %}
+
+                    <!-- Compatibilidad con archivo adjunto antiguo único (si aplica) -->
+                    {% if m.archivo_adjunto and not m.adjuntos.all %}
                         <div class="mt-3 p-2 bg-light border rounded d-inline-block">
                             <a href="{{ m.archivo_adjunto.url }}" target="_blank" class="text-decoration-none small fw-bold text-primary">
                                 <i class="bi bi-paperclip me-1"></i> Descargar Archivo Adjunto
                             </a>
                         </div>
                     {% endif %}
+
                 </div>
             </div>
         {% endfor %}
@@ -71,13 +88,31 @@
                     {{ correo.mensaje|default:"(Sin mensaje)" }}
                 </div>
 
-                {% if correo.archivo_adjunto %}
+                <!-- Archivos adjuntos múltiples (Modelo CorreoAdjunto) -->
+                {% if correo.adjuntos.all %}
+                    <div class="mt-3 pt-2 border-top">
+                        <small class="text-muted fw-bold d-block mb-1"><i class="bi bi-paperclip"></i> Archivos adjuntos:</small>
+                        <div class="d-flex flex-wrap gap-2">
+                            {% for adjunto in correo.adjuntos.all %}
+                                <div class="p-2 bg-light border rounded">
+                                    <a href="{{ adjunto.archivo.url }}" target="_blank" class="text-decoration-none small fw-bold text-primary text-truncate d-inline-block" style="max-width: 250px;">
+                                        {{ adjunto.nombre_archivo }}
+                                    </a>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endif %}
+
+                <!-- Compatibilidad con archivo adjunto antiguo único -->
+                {% if correo.archivo_adjunto and not correo.adjuntos.all %}
                     <div class="mt-3 p-2 bg-light border rounded d-inline-block">
                         <a href="{{ correo.archivo_adjunto.url }}" target="_blank" class="text-decoration-none small fw-bold text-primary">
                             <i class="bi bi-paperclip me-1"></i> Descargar Archivo Adjunto
                         </a>
                     </div>
                 {% endif %}
+
             </div>
         </div>
     {% endif %}
