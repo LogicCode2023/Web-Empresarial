@@ -726,7 +726,6 @@ def responder_correo_view(request, correo_id):
         cuerpo_respuesta = request.POST.get('cuerpo_respuesta', '').strip()
         archivo_respuesta = request.FILES.get('archivo_respuesta')
 
-        # Determinar el destinatario correcto para la respuesta
         destinatario = correo_origen.remitente_correo if correo_origen.tipo == 'RECIBIDO' else correo_origen.destinatario
         asunto = f"Re: {correo_origen.asunto}" if not correo_origen.asunto.startswith("Re:") else correo_origen.asunto
 
@@ -735,7 +734,6 @@ def responder_correo_view(request, correo_id):
 
         if cuerpo_respuesta:
             try:
-                # Configurar Brevo para el envío rápido
                 configuration = sib_api_v3_sdk.Configuration()
                 configuration.api_key['api-key'] = os.environ.get('BREVO_API_KEY')
                 api_instance = sib_api_v3_sdk.TransactionalEmailsApi(sib_api_v3_sdk.ApiClient(configuration))
@@ -757,7 +755,6 @@ def responder_correo_view(request, correo_id):
                 )
                 api_instance.send_transac_email(send_smtp_email)
 
-                # Registrar la respuesta enviada en la base de datos
                 CorreoEnviado.objects.create(
                     remitente_usuario=request.user,
                     remitente_correo=remitente_correo,
@@ -772,5 +769,6 @@ def responder_correo_view(request, correo_id):
                 print(f"Error al enviar respuesta: {e}")
                 messages.error(request, f"No se pudo enviar la respuesta: {e}")
 
+    # Redirección limpia a la bandeja para evitar errores de conexión en el POST
     return redirect('bandeja_correos')
 
