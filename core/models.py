@@ -28,7 +28,6 @@ class Tramite(models.Model):
     fecha_creacion = models.DateTimeField(auto_now_add=True)
     fecha_actualizacion = models.DateTimeField(auto_now=True)
 
-    # Nuevos campos para la gestión de aliados (con el nombre entre comillas)
     aliado_asignado = models.ForeignKey(
         'AliadoEstrategico',
         on_delete=models.SET_NULL,
@@ -219,15 +218,17 @@ class CorreoEnviado(models.Model):
     fecha_envio = models.DateTimeField(auto_now_add=True)
     tipo = models.CharField(max_length=20, choices=TIPO_CHOICES, default='ENVIADO')
     message_id = models.CharField(max_length=255, blank=True, null=True)
-    leido = models.BooleanField(default=True)  # True para enviados, False para los recibidos
+    leido = models.BooleanField(default=True)
 
     def __str__(self):
         return f"[{self.tipo}] {self.asunto} - {self.remitente_correo}"
 
-    class CorreoAdjunto(models.Model):
-        mensaje = models.ForeignKey(CorreoEnviado, on_delete=models.CASCADE, related_name='adjuntos')
-        archivo = models.FileField(upload_to='correos_adjuntos/')
-        nombre_archivo = models.CharField(max_length=255)
 
-        def __str__(self):
-            return self.nombre_archivo
+# --- Modelo CorreoAdjunto como clase independiente al mismo nivel ---
+class CorreoAdjunto(models.Model):
+    mensaje = models.ForeignKey(CorreoEnviado, on_delete=models.CASCADE, related_name='adjuntos')
+    archivo = models.FileField(upload_to='correos_adjuntos/')
+    nombre_archivo = models.CharField(max_length=255)
+
+    def __str__(self):
+        return self.nombre_archivo
