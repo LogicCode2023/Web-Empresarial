@@ -38,5 +38,5 @@ urlpatterns = [
     path('correo/<int:correo_id>/', views.detalle_correo, name='detalle_correo'),
 
     # RUTA PARA RESPONDER CORREOS Y ADJUNTAR ARCHIVOS
-    path('correo/<int:correo_id>/responder/', views.responder_correo_view, name='responder_correo'),
+    path('correo/<int:correo_id>/responder/', views.responder_correo, name='responder_correo'),
 ]
