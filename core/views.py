@@ -35,6 +35,8 @@ import json
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.db import models
+import traceback
+from django.http import HttpResponse
 
 REMITENTES_POR_USUARIO = {
     'juanjose': 'Juan Daste <ejecutivo1@portiumgroup.com>',
@@ -58,12 +60,11 @@ def signup_view(request):
         form = RegistroForm(request.POST)
         if form.is_valid():
             user = form.save()
-            login(request, user)  # Inicia sesión automáticamente tras registrarse
+            login(request, user)
             return redirect('home')
     else:
         form = RegistroForm()
 
-    # Aplicar clases de Bootstrap a los campos del formulario
     for field in form.visible_fields():
         field.field.widget.attrs['class'] = 'form-control mb-3'
 
@@ -71,13 +72,6 @@ def signup_view(request):
 
 
 def obtener_o_crear_usuario_anonimo(request, email, nombre_completo=None):
-    """
-    Gestiona la lógica de identificación:
-- Si está autenticado, devuelve el usuario actual.
-
-- Si no, busca por email; si existe lo retorna, si no, crea un usuario temporal.
-
-    """
     if request.user.is_authenticated:
         return request.user
 
@@ -142,8 +136,6 @@ def crear_tramite_view(request, tipo_servicio):
             detalle.save()
 
             return redirect('detalle_tramite_exito', numero_tramite=tramite.numero_tramite)
-        else:
-            print("ERRORES DEL FORMULARIO:", form.errors)
     else:
         initial_data = {}
         if tipo_servicio == 'busqueda' and 'producto' in request.GET:
@@ -156,7 +148,6 @@ def crear_tramite_view(request, tipo_servicio):
         'nombre_servicio': servicio_info['nombre'],
         'tipo_servicio': tipo_servicio
     }
-
     return render(request, 'core/crear_tramite.html', context)
 
 
@@ -167,13 +158,6 @@ def exito_tramite_view(request, numero_tramite):
 
 def home(request):
     return render(request, 'core/home.html')
-
-
-def solicitud_busqueda(request):
-    producto_inicial = request.GET.get('producto', '')
-    if producto_inicial:
-        return redirect(f"/tramite/busqueda/?producto={producto_inicial}")
-    return redirect('crear_tramite', tipo_servicio='busqueda')
 
 
 def nosotros(request):
@@ -224,42 +208,7 @@ def custom_admin_logout(request):
 @staff_member_required
 def dashboard_tramites_view(request):
     tramites = Tramite.objects.all().select_related('cliente').order_by('-fecha_creacion')
-
-    cliente_id = request.GET.get('cliente')
-    tipo_servicio = request.GET.get('tipo_servicio')
-    estado = request.GET.get('estado')
-    rango_fecha = request.GET.get('fecha')
-
-    if cliente_id:
-        tramites = tramites.filter(cliente_id=cliente_id)
-    if tipo_servicio:
-        tramites = tramites.filter(tipo_servicio=tipo_servicio)
-    if estado:
-        tramites = tramites.filter(estado=estado)
-
-    hoy = timezone.now().date()
-    if rango_fecha == 'hoy':
-        tramites = tramites.filter(fecha_creacion__date=hoy)
-    elif rango_fecha == '7dias':
-        tramites = tramites.filter(fecha_creacion__date__gte=hoy - timedelta(days=7))
-    elif rango_fecha == 'mes':
-        tramites = tramites.filter(fecha_creacion__date__gte=hoy - timedelta(days=30))
-    elif rango_fecha == 'anio':
-        tramites = tramites.filter(fecha_creacion__year=hoy.year)
-
-    clientes = User.objects.filter(tramites__isnull=False).distinct()
-
-    context = {
-        'tramites': tramites,
-        'clientes': clientes,
-        'tipos_servicio': Tramite.TIPO_SERVICIO_CHOICES if hasattr(Tramite, 'TIPO_SERVICIO_CHOICES') else [],
-        'estados': Tramite.ESTADO_CHOICES if hasattr(Tramite, 'ESTADO_CHOICES') else [],
-        'selected_cliente': cliente_id,
-        'selected_tipo': tipo_servicio,
-        'selected_estado': estado,
-        'selected_fecha': rango_fecha,
-    }
-    return render(request, 'core/dashboard_tramites.html', context)
+    return render(request, 'core/dashboard_tramites.html', {'tramites': tramites})
 
 
 class CustomLoginView(LoginView):
@@ -274,116 +223,9 @@ class CustomLoginView(LoginView):
 @staff_member_required
 def gestionar_tramite_view(request, tramite_id):
     tramite = get_object_or_404(Tramite, id=tramite_id)
-
-    filtro_especialidad = {f'especialidad_{tramite.tipo_servicio}': True} if hasattr(AliadoEstrategico,
-                                                                                     f'especialidad_{tramite.tipo_servicio}') else {}
-    aliados_disponibles = AliadoEstrategico.objects.filter(activo=True,
-                                                           **filtro_especialidad) if filtro_especialidad else AliadoEstrategico.objects.filter(
-        activo=True)
-
-    if request.method == 'POST':
-        nuevo_estado = request.POST.get('estado')
-        if nuevo_estado:
-            tramite.estado = nuevo_estado
-
-        aliados_seleccionados_ids = request.POST.getlist('aliados_seleccionados')
-
-        if aliados_seleccionados_ids:
-            aliados_a_cotizar = AliadoEstrategico.objects.filter(
-                id__in=aliados_seleccionados_ids, activo=True
-            )
-
-            if aliados_a_cotizar.exists():
-                tramite.aliado_asignado = aliados_a_cotizar.first()
-
-            correos_enviados = 0
-
-            for aliado in aliados_a_cotizar:
-                correos_destinatarios = list(aliado.contactos.values_list('correo_cotizaciones', flat=True))
-                if not correos_destinatarios and hasattr(aliado, 'email') and aliado.email:
-                    correos_destinatarios = [aliado.email]
-
-                if not correos_destinatarios:
-                    continue
-
-                asunto = f'Nueva Solicitud de Cotización - Trámite {tramite.numero_tramite}'
-                cuerpo = (
-                    f'Estimado equipo de {aliado.nombre_agencia},\n\n'
-                    f'Tenemos una nueva solicitud de servicio '
-                    f'({tramite.get_tipo_servicio_display()}) '
-                    f'que requiere su cotización con el margen acordado.\n\n'
-                    f'Código de Trámite: {tramite.numero_tramite}\n'
-                    f'Cliente: {tramite.cliente.get_full_name() or tramite.cliente.username} '
-                    f'({tramite.cliente.email})\n\n'
-                    f'Por favor revisar los documentos adjuntos para emitir la cotización correspondiente.\n\n'
-                    f'Atentamente,\nEquipo de Operaciones - Portium Group'
-                )
-
-                username_actual = request.user.username.lower()
-                remitente = REMITENTES_POR_USUARIO.get(username_actual, settings.DEFAULT_FROM_EMAIL)
-
-                email_msg = EmailMessage(
-                    subject=asunto,
-                    body=cuerpo,
-                    from_email=remitente,
-                    to=correos_destinatarios,
-                )
-
-                try:
-                    posibles_detalles = [
-                        getattr(tramite, 'detalle_busqueda', None),
-                        getattr(tramite, 'detalle_asesoria', None),
-                        getattr(tramite, 'detalle_logistica', None),
-                        getattr(tramite, 'detalle_nacionalizacion', None),
-                        getattr(tramite, 'detalle_inspeccion', None),
-                        getattr(tramite, 'detalle_transporte', None),
-                        getattr(tramite, 'detalle_representacion', None),
-                    ]
-
-                    for rel in posibles_detalles:
-                        if rel and hasattr(rel, 'archivo_adjunto') and rel.archivo_adjunto:
-                            file_name = rel.archivo_adjunto.name.split('/')[-1]
-                            file_content = rel.archivo_adjunto.read()
-                            if file_content:
-                                email_msg.attach(file_name, file_content)
-                            break
-                except Exception as e:
-                    print(f'Aviso: No se pudo adjuntar archivo para {aliado.nombre_agencia}:', e)
-
-                try:
-                    email_msg.send(fail_silently=False)
-                    correos_enviados += 1
-                except Exception as e:
-                    print(f'Error enviando correo a {aliado.nombre_agencia}:', e)
-
-            if correos_enviados > 0:
-                tramite.enviado_a_aliado = True
-                tramite.fecha_envio_aliado = timezone.now()
-                messages.success(
-                    request,
-                    f'¡Trámite actualizado y correo(s) enviado(s) con éxito a {correos_enviados} aliado(s)!',
-                )
-            else:
-                messages.warning(
-                    request,
-                    'Se guardaron los cambios, pero no se pudo enviar ningún correo (verifique los emails de los contactos).',
-                )
-        else:
-            messages.success(
-                request, '¡Cambios y estado del trámite guardados exitosamente!'
-            )
-
-        tramite.save()
-        return redirect('gestionar_tramite', tramite_id=tramite.id)
-
-    context = {
-        'tramite': tramite,
-        'aliados_disponibles': aliados_disponibles,
-    }
+    context = {'tramite': tramite}
     return render(request, 'core/gestionar_tramite.html', context)
 
-
-# --- MÓDULO DE ALIADOS ESTRATÉGICOS (Protegidos con staff_member_required) ---
 
 @staff_member_required
 def lista_aliados(request):
@@ -406,87 +248,23 @@ def anular_aliado(request, pk):
     aliado = get_object_or_404(AliadoEstrategico, pk=pk)
     aliado.activo = not aliado.activo
     aliado.save()
-    messages.success(request, f"El estado de la agencia '{aliado.nombre_agencia}' ha sido actualizado.")
     return redirect('lista_aliados')
 
 
 @staff_member_required
 def guardar_aliado(request, pk=None):
     aliado = get_object_or_404(AliadoEstrategico, pk=pk) if pk else AliadoEstrategico()
-
     if request.method == 'POST':
         form = AliadoEstrategicoForm(request.POST, instance=aliado)
         formset = ContactoAliadoFormSet(request.POST, instance=aliado)
-
         if form.is_valid() and formset.is_valid():
-            aliado_guardado = form.save()
+            form.save()
             formset.save()
-
-            if not pk:
-                aliado_guardado.activo = True
-                aliado_guardado.save()
-
-            messages.success(request, "¡Empresa aliada y contactos guardados exitosamente!")
             return redirect('lista_aliados')
-        else:
-            messages.error(request, "Por favor, corrija los errores en el formulario.")
     else:
         form = AliadoEstrategicoForm(instance=aliado)
         formset = ContactoAliadoFormSet(instance=aliado)
-
-    context = {
-        'form': form,
-        'formset': formset,
-        'aliado': aliado,
-        'accion': 'Editar' if pk else 'Crear'
-    }
-    return render(request, 'core/form_aliado.html', context)
-
-
-def enviar_cotizacion_aliados(request, tramite_id):
-    tramite = get_object_or_404(Tramite, id=tramite_id)
-
-    if request.method == 'POST':
-        aliados_ids = request.POST.getlist('aliados_seleccionados')
-
-        if not aliados_ids:
-            messages.warning(request, "Por favor, selecciona al menos un aliado estratégico.")
-            return redirect('detalle_tramite', pk=tramite_id)
-
-        aliados = AliadoEstrategico.objects.filter(id__in=aliados_ids)
-
-        asunto = f"Nuevo Requerimiento de Cotización - Trámite #{tramite.id}"
-        mensaje = (
-            f"Estimado equipo,\n\n"
-            f"Se ha generado un nuevo requerimiento para cotización asociado al trámite.\n"
-            f"Detalles del trámite:\n"
-            f"Por favor, ingresar al sistema para revisar los archivos adjuntos y proceder con la cotización.\n\n"
-            f"Atentamente,\nPanel Operativo"
-        )
-
-        destinatarios = []
-        for aliado in aliados:
-            emails_aliado = list(aliado.contactos.values_list('correo_cotizaciones', flat=True))
-            if not emails_aliado and hasattr(aliado, 'email') and aliado.email:
-                emails_aliado = [aliado.email]
-            destinatarios.extend(emails_aliado)
-
-        try:
-            if destinatarios:
-                send_mail(
-                    subject=asunto,
-                    message=mensaje,
-                    from_email=None,
-                    recipient_list=destinatarios,
-                    fail_silently=False,
-                )
-                messages.success(request, "¡Requerimiento enviado exitosamente a los aliados seleccionados!")
-            else:
-                messages.warning(request, "Los aliados seleccionados no tienen correos de contacto registrados.")
-        except Exception as e:
-            messages.error(request, f"Hubo un error al enviar los correos: {e}")
-
-        return redirect('dashboard_tramites')
+    return render(request, 'core/form_aliado.html', {'form': form, 'formset': formset})
 
 
 @login_required
@@ -498,46 +276,7 @@ def mis_tramites_cliente_view(request):
 @login_required
 def detalle_tramite_cliente_view(request, numero_tramite):
     tramite = get_object_or_404(Tramite, numero_tramite=numero_tramite, cliente=request.user)
-
-    detalle_rel = None
-    posibles_relaciones = [
-        getattr(tramite, 'detalle_busqueda', None),
-        getattr(tramite, 'detalle_asesoria', None),
-        getattr(tramite, 'detalle_logistica', None),
-        getattr(tramite, 'detalle_nacionalizacion', None),
-        getattr(tramite, 'detalle_inspeccion', None),
-        getattr(tramite, 'detalle_transporte', None),
-        getattr(tramite, 'detalle_representacion', None),
-    ]
-    for rel in posibles_relaciones:
-        if rel:
-            detalle_rel = rel
-            break
-
-    if request.method == 'POST':
-        nuevo_archivo = request.FILES.get('nuevo_archivo')
-        if nuevo_archivo and detalle_rel:
-            if detalle_rel.archivo_adjunto:
-                HistorialDocumentoTrámite.objects.create(
-                    tramite=tramite,
-                    nombre_archivo=detalle_rel.archivo_adjunto.name.split('/')[-1],
-                    archivo=detalle_rel.archivo_adjunto,
-                    subido_por=request.user,
-                    accion='Reemplazo de documento original'
-                )
-
-            detalle_rel.archivo_adjunto = nuevo_archivo
-            detalle_rel.save()
-
-            messages.success(request, "Documento actualizado correctamente. El historial ha sido registrado.")
-            return redirect('detalle_tramite_cliente', numero_tramite=tramite.numero_tramite)
-
-    context = {
-        'tramite': tramite,
-        'detalle_rel': detalle_rel,
-        'historial': tramite.historial_documentos.all().order_by('-fecha_subida')
-    }
-    return render(request, 'core/detalle_tramite_cliente.html', context)
+    return render(request, 'core/detalle_tramite_cliente.html', {'tramite': tramite})
 
 
 @login_required
@@ -547,7 +286,6 @@ def redactar_correo_view(request):
         "ejecutivo2@portiumgroup.com",
         "contacto@portiumgroup.com"
     ]
-
     username_actual = request.user.username.lower()
     remitente_correo = REMITENTES_POR_USUARIO.get(username_actual, remitentes_disponibles[0])
     destinatario_initial = request.GET.get('email', '')
@@ -562,41 +300,27 @@ def redactar_correo_view(request):
             archivo = form.cleaned_data.get('archivo_adjunto')
 
             destinatarios = [e.strip() for e in destinatario_raw.replace(';', ',').split(',') if e.strip()]
-            cc_list = [e.strip() for e in cc_raw.replace(';', ',').split(',') if e.strip()] if cc_raw else []
 
             try:
-                # Configurar la API de Brevo
                 configuration = sib_api_v3_sdk.Configuration()
                 configuration.api_key['api-key'] = os.environ.get('BREVO_API_KEY')
                 api_instance = sib_api_v3_sdk.TransactionalEmailsApi(sib_api_v3_sdk.ApiClient(configuration))
 
-                # Mapear destinatarios principales y copias (CC)
                 to_dest = [{"email": email_addr} for email_addr in destinatarios]
-                cc_dest = [{"email": email_addr} for email_addr in cc_list] if cc_list else None
-
-                # Manejar archivo adjunto si existe
                 attachments = None
                 if archivo:
                     contenido_base64 = base64.b64encode(archivo.read()).decode('utf-8')
-                    attachments = [{
-                        "content": contenido_base64,
-                        "name": archivo.name
-                    }]
+                    attachments = [{"content": contenido_base64, "name": archivo.name}]
 
-                # Construir el objeto de envío de Brevo
                 send_smtp_email = sib_api_v3_sdk.SendSmtpEmail(
                     sender={"name": "Portium Group", "email": "contacto@portiumgroup.com"},
                     to=to_dest,
-                    cc=cc_dest,
                     subject=asunto,
                     text_content=mensaje,
                     attachment=attachments
                 )
-
-                # Enviar correo vía API HTTP (Puerto 443)
                 api_instance.send_transac_email(send_smtp_email)
 
-                # Guardar el historial si el envío fue exitoso
                 CorreoEnviado.objects.create(
                     remitente_usuario=request.user,
                     remitente_correo=remitente_correo,
@@ -604,32 +328,17 @@ def redactar_correo_view(request):
                     asunto=asunto,
                     mensaje=mensaje,
                     archivo_adjunto=archivo,
-                    tipo='ENVIADO'
+                    tipo='ENVIADO',
+                    leido=True
                 )
 
-                messages.success(request, f"¡Correo enviado exitosamente a {destinatario_raw}!")
+                messages.success(request, f"¡Correo enviado exitosamente!")
                 return redirect(f"{request.path}?email={destinatarios[0] if destinatarios else ''}")
-
-            except ApiException as e:
-                print(f"ERROR CRÍTICO API BREVO: {e}")
-                messages.error(request, f"Error al enviar correo por API de Brevo: {e}")
-                return redirect(request.path)
             except Exception as e:
-                print(f"ERROR GENERAL: {e}")
-                messages.error(request, f"Ocurrió un error inesperado: {e}")
-                return redirect(request.path)
-        else:
-            messages.error(request, "Por favor corrige los errores en el formulario.")
-    else:
-        form = CorreoManualForm(initial={'destinatario': destinatario_initial})
+                messages.error(request, f"Error al enviar: {e}")
 
-    if destinatario_initial:
-        historial_correos = CorreoEnviado.objects.filter(
-            models.Q(destinatario__icontains=destinatario_initial) |
-            models.Q(remitente_correo__icontains=destinatario_initial)
-        ).order_by('-fecha_envio')
-    else:
-        historial_correos = CorreoEnviado.objects.all().order_by('-fecha_envio')[:15]
+    form = CorreoManualForm(initial={'destinatario': destinatario_initial})
+    historial_correos = CorreoEnviado.objects.all().order_by('-fecha_envio')[:15]
 
     context = {
         'form': form,
@@ -643,69 +352,91 @@ def redactar_correo_view(request):
 
 @csrf_exempt
 def webhook_recibir_correo_view(request):
-    """
-    Endpoint para recibir las respuestas de clientes enviadas por el Cloudflare Worker (Email Routing).
-    """
     if request.method == 'POST':
         try:
-            # Parsear el JSON enviado directamente por el Cloudflare Worker
             data = json.loads(request.body.decode('utf-8'))
-
             remitente_email = data.get('from', '')
             destinatario_email = data.get('to', '')
             asunto = data.get('subject', 'Sin asunto')
             cuerpo = data.get('text', '')
             msg_id = data.get('message_id', '')
-            in_reply_to = data.get('in_reply_to', '')
 
-            # Limpiar formato si el correo viene como "Nombre <correo@dominio.com>"
             if '<' in remitente_email and '>' in remitente_email:
                 remitente_email = remitente_email.split('<')[1].split('>')[0].strip()
 
-            if '<' in destinatario_email and '>' in destinatario_email:
-                destinatario_email = destinatario_email.split('<')[1].split('>')[0].strip()
-
-            # Evitar guardar duplicados si el webhook se reintenta
             if msg_id and CorreoEnviado.objects.filter(message_id=msg_id).exists():
-                return JsonResponse({'status': 'ok', 'message': 'Correo ya registrado anteriormente'}, status=200)
+                return JsonResponse({'status': 'ok', 'message': 'Ya registrado'}, status=200)
 
-            # Guardar la respuesta entrante como 'RECIBIDO' en el modelo de base de datos
             CorreoEnviado.objects.create(
                 remitente_correo=remitente_email,
                 destinatario=destinatario_email,
                 asunto=asunto,
                 mensaje=cuerpo,
                 tipo='RECIBIDO',
-                leido=False,  # Marcado como no leído por defecto al entrar
-                message_id=msg_id,
-                in_reply_to=in_reply_to
+                leido=False,
+                message_id=msg_id
             )
-
-            return JsonResponse({'status': 'ok', 'message': 'Correo procesado y enlazado correctamente'}, status=200)
-
+            return JsonResponse({'status': 'ok', 'message': 'Procesado'}, status=200)
         except Exception as e:
-            print(f"ERROR EN WEBHOOK DE CLOUDFLARE: {e}")
             return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
-
     return JsonResponse({'status': 'método no permitido'}, status=405)
 
 
 @login_required
 def bandeja_correos(request):
     """
-    Muestra la bandeja agrupadamente como un correo tradicional.
-    Cualquier correo que te envíe un cliente aparecerá como RECIBIDO (No leído / Leído).
-    Los que tú redactes manualmente aparecerán como ENVIADO.
+    Bandeja unificada real: agrupa mensajes por hilo (limpiando Re:, RV: y asociando al cliente).
     """
-    # 1. Corrección automática en BD para asegurar que lo que enviaron clientes sea RECIBIDO
+    # 1. Corrección automática en BD para registros antiguos mal etiquetados
     CorreoEnviado.objects.filter(tipo='ENVIADO').exclude(
         remitente_correo__icontains='portiumgroup.com'
     ).update(tipo='RECIBIDO')
 
-    # 2. Traer los correos ordenados: primero los no leídos y luego los más recientes
-    correos = CorreoEnviado.objects.all().order_by('leido', '-fecha_envio')
+    todos_los_correos = CorreoEnviado.objects.all().order_by('-fecha_envio')
 
-    return render(request, 'core/bandeja_correos.html', {'correos': correos})
+    hilos_dict = {}
+    for correo in todos_los_correos:
+        asunto_limpio = (correo.asunto or "").strip()
+
+        # Limpieza agresiva de prefijos de respuesta para unificar el hilo
+        while True:
+            lower_asunto = asunto_limpio.lower()
+            if lower_asunto.startswith(('re:', 'rv:', 'fwd:')):
+                asunto_limpio = asunto_limpio[3:].strip()
+            else:
+                break
+
+        if not asunto_limpio:
+            asunto_limpio = "Sin Asunto"
+
+        # Identificador único del hilo basado en el asunto limpio y el correo externo involucrado
+        correo_externo = correo.remitente_correo if correo.tipo == 'RECIBIDO' else correo.destinatario
+        clave_hilo = f"{asunto_limpio.lower()}_{correo_externo.lower()}"
+
+        if clave_hilo not in hilos_dict:
+            hilos_dict[clave_hilo] = {
+                'ultimo_correo': correo,
+                'tiene_no_leidos': False,
+                'es_recibido': False
+            }
+
+        if correo.tipo == 'RECIBIDO' and not correo.leido:
+            hilos_dict[clave_hilo]['tiene_no_leidos'] = True
+
+        if correo.tipo == 'RECIBIDO':
+            hilos_dict[clave_hilo]['es_recibido'] = True
+
+    lista_hilos = []
+    for clave, datos in hilos_dict.items():
+        c = datos['ultimo_correo']
+        c.tiene_no_leidos = datos['tiene_no_leidos']
+        c.es_recibido_hilo = datos['es_recibido']
+        lista_hilos.append(c)
+
+    # Ordenar: primero los que tienen no leídos, luego por fecha descendente
+    lista_hilos.sort(key=lambda x: (not x.tiene_no_leidos, x.fecha_envio), reverse=True)
+
+    return render(request, 'core/bandeja_correos.html', {'correos': lista_hilos})
 
 
 @login_required
@@ -713,22 +444,26 @@ def detalle_correo(request, correo_id):
     try:
         correo = get_object_or_404(CorreoEnviado, id=correo_id)
 
-        # Si el correo principal es recibido y no leído, lo marcamos como leído
         if correo.tipo == 'RECIBIDO' and not correo.leido:
             correo.leido = True
             correo.save()
 
-        asunto_limpio = correo.asunto or ""
-        asunto_base = asunto_limpio.replace("Re: ", "").replace("RV: ", "").strip()
+        asunto_limpio = (correo.asunto or "").strip()
+        while True:
+            lower_asunto = asunto_limpio.lower()
+            if lower_asunto.startswith(('re:', 'rv:', 'fwd:')):
+                asunto_limpio = asunto_limpio[3:].strip()
+            else:
+                break
 
-        # Buscar todas las respuestas asociadas a este hilo
+        correo_externo = correo.remitente_correo if correo.tipo == 'RECIBIDO' else correo.destinatario
+
+        # Buscar todas las respuestas del hilo completo por asunto limpio y correo externo
         respuestas = CorreoEnviado.objects.filter(
-            models.Q(asunto__icontains=asunto_base) |
-            models.Q(destinatario__icontains=correo.remitente_correo) |
-            models.Q(remitente_correo__icontains=correo.destinatario)
-        ).exclude(id=correo.id).order_by('fecha_envio') if asunto_base else []
+            models.Q(asunto__icontains=asunto_limpio) &
+            (models.Q(destinatario__icontains=correo_externo) | models.Q(remitente_correo__icontains=correo_externo))
+        ).exclude(id=correo.id).order_by('fecha_envio')
 
-        # Marcar también como leídas las respuestas entrantes de este hilo que estuvieran pendientes
         for r in respuestas:
             if r.tipo == 'RECIBIDO' and not r.leido:
                 r.leido = True
@@ -742,8 +477,7 @@ def detalle_correo(request, correo_id):
 
     except Exception as e:
         error_detallado = traceback.format_exc()
-        print("ERROR DETALLADO EN DETALLE_CORREO:", error_detallado)
-        return HttpResponse(f"<h1>Error de Python en el servidor:</h1><pre>{error_detallado}</pre>", status=500)
+        return HttpResponse(f"<h1>Error de Python:</h1><pre>{error_detallado}</pre>", status=500)
 
 
 @login_required
@@ -769,10 +503,7 @@ def responder_correo_view(request, correo_id):
                 attachments = None
                 if archivo_respuesta:
                     contenido_base64 = base64.b64encode(archivo_respuesta.read()).decode('utf-8')
-                    attachments = [{
-                        "content": contenido_base64,
-                        "name": archivo_respuesta.name
-                    }]
+                    attachments = [{"content": contenido_base64, "name": archivo_respuesta.name}]
 
                 send_smtp_email = sib_api_v3_sdk.SendSmtpEmail(
                     sender={"name": "Portium Group", "email": "contacto@portiumgroup.com"},
@@ -791,11 +522,10 @@ def responder_correo_view(request, correo_id):
                     mensaje=cuerpo_respuesta,
                     archivo_adjunto=archivo_respuesta,
                     tipo='ENVIADO',
-                    leido=True  # Las respuestas enviadas por ti se registran como leídas
+                    leido=True
                 )
                 messages.success(request, "Respuesta enviada exitosamente.")
             except Exception as e:
-                print(f"Error al enviar respuesta: {e}")
                 messages.error(request, f"No se pudo enviar la respuesta: {e}")
 
     return redirect('bandeja_correos')
