@@ -699,17 +699,21 @@ def bandeja_correos(request):
 @login_required
 def detalle_correo(request, correo_id):
     correo = get_object_or_404(CorreoEnviado, id=correo_id)
-    # Al abrirlo, si es un correo recibido no leído, lo marcamos como leído automáticamente
+
+    # Marcar como leído si es recibido
     if correo.tipo == 'RECIBIDO' and not correo.leido:
         correo.leido = True
         correo.save()
 
-    # Buscar mensajes anteriores o relacionados que pertenezcan al mismo hilo (por asunto o email)
+    # Blindaje contra asuntos nulos (None) para evitar Error 500
+    asunto_limpio = correo.asunto or ""
+    asunto_base = asunto_limpio.replace("Re: ", "").replace("RV: ", "").strip()
+
     respuestas = CorreoEnviado.objects.filter(
-        models.Q(asunto__icontains=correo.asunto.replace("Re: ", "").replace("RV: ", "")) |
+        models.Q(asunto__icontains=asunto_base) |
         models.Q(destinatario__icontains=correo.remitente_correo) |
         models.Q(remitente_correo__icontains=correo.destinatario)
-    ).exclude(id=correo.id).order_by('fecha_envio')
+    ).exclude(id=correo.id).order_by('fecha_envio') if asunto_base else []
 
     context = {
         'correo': correo,
