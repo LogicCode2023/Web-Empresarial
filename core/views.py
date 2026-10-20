@@ -36,7 +36,6 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.db import models
 
-
 REMITENTES_POR_USUARIO = {
     'juanjose': 'Juan Daste <ejecutivo1@portiumgroup.com>',
     'juansebas': 'Gerencia Portium <gerencia@portiumgroup.com>',
@@ -74,8 +73,10 @@ def signup_view(request):
 def obtener_o_crear_usuario_anonimo(request, email, nombre_completo=None):
     """
     Gestiona la lógica de identificación:
-    - Si está autenticado, devuelve el usuario actual.
-    - Si no, busca por email; si existe lo retorna, si no, crea un usuario temporal.
+- Si está autenticado, devuelve el usuario actual.
+
+- Si no, busca por email; si existe lo retorna, si no, crea un usuario temporal.
+
     """
     if request.user.is_authenticated:
         return request.user
@@ -622,7 +623,6 @@ def redactar_correo_view(request):
     else:
         form = CorreoManualForm(initial={'destinatario': destinatario_initial})
 
-    # MODIFICADO: Ahora el historial filtra tanto envíos como respuestas entrantes para el hilo completo
     if destinatario_initial:
         historial_correos = CorreoEnviado.objects.filter(
             models.Q(destinatario__icontains=destinatario_initial) |
@@ -675,7 +675,8 @@ def webhook_recibir_correo_view(request):
                 destinatario=destinatario_email,
                 asunto=asunto,
                 mensaje=cuerpo,
-                tipo='RECIBIDO',  # Corregido a RECIBIDO
+                tipo='RECIBIDO',
+                leido=False,  # Marcado como no leído por defecto al entrar
                 message_id=msg_id,
                 in_reply_to=in_reply_to
             )
@@ -691,8 +692,16 @@ def webhook_recibir_correo_view(request):
 
 @login_required
 def bandeja_correos(request):
-    # Mostrar todos los correos ordenados del más reciente al más antiguo
-    correos = CorreoEnviado.objects.all().order_by('-fecha_envio')
+    """
+    MODIFICADO: Muestra únicamente los correos principales (raíz), excluyendo respuestas (Re: / RV:)
+    para que la bandeja no se duplique por cada respuesta enviada o recibida.
+    """
+    # Filtramos para mostrar solo los correos que NO son respuestas (asunto sin Re: o RV:)
+    correos = CorreoEnviado.objects.exclude(
+        models.Q(asunto__istartswith='Re:') |
+        models.Q(asunto__istartswith='RV:')
+    ).order_by('leido', '-fecha_envio')
+
     return render(request, 'core/bandeja_correos.html', {'correos': correos})
 
 
@@ -705,6 +714,7 @@ def detalle_correo(request, correo_id):
     try:
         correo = get_object_or_404(CorreoEnviado, id=correo_id)
 
+        # Si el correo principal es recibido y no leído, lo marcamos como leído
         if correo.tipo == 'RECIBIDO' and not correo.leido:
             correo.leido = True
             correo.save()
@@ -712,11 +722,18 @@ def detalle_correo(request, correo_id):
         asunto_limpio = correo.asunto or ""
         asunto_base = asunto_limpio.replace("Re: ", "").replace("RV: ", "").strip()
 
+        # Buscar todas las respuestas asociadas a este hilo
         respuestas = CorreoEnviado.objects.filter(
             models.Q(asunto__icontains=asunto_base) |
             models.Q(destinatario__icontains=correo.remitente_correo) |
             models.Q(remitente_correo__icontains=correo.destinatario)
         ).exclude(id=correo.id).order_by('fecha_envio') if asunto_base else []
+
+        # Marcar también como leídas las respuestas entrantes de este hilo que estuvieran pendientes
+        for r in respuestas:
+            if r.tipo == 'RECIBIDO' and not r.leido:
+                r.leido = True
+                r.save()
 
         context = {
             'correo': correo,
@@ -774,13 +791,12 @@ def responder_correo_view(request, correo_id):
                     asunto=asunto,
                     mensaje=cuerpo_respuesta,
                     archivo_adjunto=archivo_respuesta,
-                    tipo='ENVIADO'
+                    tipo='ENVIADO',
+                    leido=True  # Las respuestas enviadas por ti se registran como leídas
                 )
                 messages.success(request, "Respuesta enviada exitosamente.")
             except Exception as e:
                 print(f"Error al enviar respuesta: {e}")
                 messages.error(request, f"No se pudo enviar la respuesta: {e}")
 
-    # Redirección limpia a la bandeja para evitar errores de conexión en el POST
     return redirect('bandeja_correos')
-
