@@ -433,13 +433,15 @@ def bandeja_correos(request):
 @login_required
 def detalle_correo(request, correo_id):
     try:
-        correo = get_object_or_404(CorreoEnviado, id=correo_id)
+        correo_principal = get_object_or_404(CorreoEnviado, id=correo_id)
 
-        if correo.tipo == 'RECIBIDO' and not correo.leido:
-            correo.leido = True
-            correo.save()
+        # Si el correo principal es recibido y no leído, lo marcamos como leído
+        if correo_principal.tipo == 'RECIBIDO' and not correo_principal.leido:
+            correo_principal.leido = True
+            correo_principal.save()
 
-        asunto_limpio = (correo.asunto or "").strip()
+        # Extraer el asunto base limpio (quitando Re:, RV:, Fwd:)
+        asunto_limpio = (correo_principal.asunto or "").strip()
         while True:
             lower_asunto = asunto_limpio.lower()
             if lower_asunto.startswith(('re:', 'rv:', 'fwd:')):
@@ -447,21 +449,24 @@ def detalle_correo(request, correo_id):
             else:
                 break
 
-        correo_externo = correo.remitente_correo if correo.tipo == 'RECIBIDO' else correo.destinatario
+        # Identificar el correo del cliente externo involucrado en este hilo
+        correo_externo = correo_principal.remitente_correo if correo_principal.tipo == 'RECIBIDO' else correo_principal.destinatario
 
-        respuestas = CorreoEnviado.objects.filter(
+        # Traer TODOS los mensajes de este hilo (tanto recibidos del cliente como enviados por ti)
+        hilo_completo = CorreoEnviado.objects.filter(
             models.Q(asunto__icontains=asunto_limpio) &
             (models.Q(destinatario__icontains=correo_externo) | models.Q(remitente_correo__icontains=correo_externo))
-        ).exclude(id=correo.id).order_by('fecha_envio')
+        ).order_by('fecha_envio')
 
-        for r in respuestas:
-            if r.tipo == 'RECIBIDO' and not r.leido:
-                r.leido = True
-                r.save()
+        # Marcar como leídos todos los mensajes recibidos pendientes de este hilo
+        for m in hilo_completo:
+            if m.tipo == 'RECIBIDO' and not m.leido:
+                m.leido = True
+                m.save()
 
         context = {
-            'correo': correo,
-            'respuestas': respuestas
+            'correo': correo_principal,
+            'respuestas': hilo_completo  # Contiene toda la conversación integrada
         }
         return render(request, 'core/detalle_correo.html', context)
 
