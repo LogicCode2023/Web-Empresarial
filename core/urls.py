@@ -29,11 +29,14 @@ urlpatterns = [
     path('mis-tramites/', views.mis_tramites_cliente_view, name='mis_tramites'),
     path('tramite/detalle/<str:numero_tramite>/', views.detalle_tramite_cliente_view, name='detalle_tramite_cliente'),
     path('panel/redactar-correo/', views.redactar_correo_view, name='redactar_correo'),
+
+    # ENDPOINTS DEL WEBHOOK (Registramos ambas rutas para asegurar la conexion con Cloudflare)
     path('api/recibir-correo-webhook/', views.webhook_recibir_correo_view, name='webhook_recibir_correo'),
+    path('webhook/recibir-correo/', views.webhook_recibir_correo_view, name='webhook_recibir_correo_alt'),
+
     path('bandeja-correos/', views.bandeja_correos, name='bandeja_correos'),
     path('correo/<int:correo_id>/', views.detalle_correo, name='detalle_correo'),
 
-    # RUTA AGREGADA PARA RESPONDER CORREOS Y ADJUNTAR ARCHIVOS
+    # RUTA PARA RESPONDER CORREOS Y ADJUNTAR ARCHIVOS
     path('correo/<int:correo_id>/responder/', views.responder_correo_view, name='responder_correo'),
 ]
-
