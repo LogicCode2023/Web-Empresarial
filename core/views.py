@@ -696,30 +696,38 @@ def bandeja_correos(request):
     return render(request, 'core/bandeja_correos.html', {'correos': correos})
 
 
+import traceback
+from django.http import HttpResponse
+
+
 @login_required
 def detalle_correo(request, correo_id):
-    correo = get_object_or_404(CorreoEnviado, id=correo_id)
+    try:
+        correo = get_object_or_404(CorreoEnviado, id=correo_id)
 
-    # Marcar como leído si es recibido
-    if correo.tipo == 'RECIBIDO' and not correo.leido:
-        correo.leido = True
-        correo.save()
+        if correo.tipo == 'RECIBIDO' and not correo.leido:
+            correo.leido = True
+            correo.save()
 
-    # Blindaje contra asuntos nulos (None) para evitar Error 500
-    asunto_limpio = correo.asunto or ""
-    asunto_base = asunto_limpio.replace("Re: ", "").replace("RV: ", "").strip()
+        asunto_limpio = correo.asunto or ""
+        asunto_base = asunto_limpio.replace("Re: ", "").replace("RV: ", "").strip()
 
-    respuestas = CorreoEnviado.objects.filter(
-        models.Q(asunto__icontains=asunto_base) |
-        models.Q(destinatario__icontains=correo.remitente_correo) |
-        models.Q(remitente_correo__icontains=correo.destinatario)
-    ).exclude(id=correo.id).order_by('fecha_envio') if asunto_base else []
+        respuestas = CorreoEnviado.objects.filter(
+            models.Q(asunto__icontains=asunto_base) |
+            models.Q(destinatario__icontains=correo.remitente_correo) |
+            models.Q(remitente_correo__icontains=correo.destinatario)
+        ).exclude(id=correo.id).order_by('fecha_envio') if asunto_base else []
 
-    context = {
-        'correo': correo,
-        'respuestas': respuestas
-    }
-    return render(request, 'core/detalle_correo.html', context)
+        context = {
+            'correo': correo,
+            'respuestas': respuestas
+        }
+        return render(request, 'core/detalle_correo.html', context)
+
+    except Exception as e:
+        error_detallado = traceback.format_exc()
+        print("ERROR DETALLADO EN DETALLE_CORREO:", error_detallado)
+        return HttpResponse(f"<h1>Error de Python en el servidor:</h1><pre>{error_detallado}</pre>", status=500)
 
 
 @login_required
