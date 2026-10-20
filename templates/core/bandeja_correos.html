@@ -12,22 +12,22 @@
         {% for c in correos %}
             <div class="list-group-item list-group-item-action d-flex justify-content-between align-items-center py-3 {% if c.tiene_no_leidos %}border-start border-danger border-4 bg-light{% endif %}">
                 <div class="flex-grow-1" style="cursor: pointer;" onclick="cargarDetalle({{ c.id }})">
-                    <!-- Distinción de estados basada en el hilo completo: No Leído (Rojo), Leído (Gris) y Enviado (Azul) -->
+                    <!-- Distinción correcta de estados basada en el hilo unificado -->
                     {% if c.tiene_no_leidos %}
                         <span class="badge bg-danger me-2"><i class="bi bi-envelope-exclamation-fill me-1"></i> No Leído</span>
-                    {% elif c.tipo == 'RECIBIDO' %}
+                    {% elif c.es_recibido_hilo %}
                         <span class="badge bg-secondary me-2"><i class="bi bi-envelope-open me-1"></i> Leído</span>
                     {% else %}
                         <span class="badge bg-primary me-2"><i class="bi bi-send-check me-1"></i> Enviado</span>
                     {% endif %}
 
-                    <!-- Asunto principal del hilo -->
+                    <!-- Asunto principal del hilo unificado -->
                     <strong class="text-dark {% if c.tiene_no_leidos %}fw-bold text-danger{% endif %}">
                         {{ c.asunto|default:"Sin Asunto" }}
                     </strong>
 
                     <p class="mb-0 text-muted small mt-1">
-                        {% if c.tipo == 'RECIBIDO' %}
+                        {% if c.es_recibido_hilo %}
                             De: <strong>{{ c.remitente_correo }}</strong>
                         {% else %}
                             Para: <strong>{{ c.destinatario }}</strong>
