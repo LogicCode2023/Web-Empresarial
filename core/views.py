@@ -529,21 +529,48 @@ def responder_correo(request, correo_id):
 
     if request.method == 'POST':
         cuerpo = request.POST.get('cuerpo_respuesta')
-        destinatarios_cc = request.POST.get('destinatario_cc', '')  # Recibimos las copias si las hay
+        destinatarios_cc_raw = request.POST.get('destinatario_cc', '')
 
-        # Lógica para enviar el correo real y guardarlo en la base de datos:
+        # 1. Determinar dinámicamente el remitente según el usuario logueado
+        if request.user.is_authenticated:
+            username_actual = request.user.username.lower()
+
+            # Prioridad 1: Correo configurado en el usuario de Django (si es @portiumgroup.com)
+            if request.user.email and 'portiumgroup.com' in request.user.email.lower():
+                remitente_corporativo = request.user.email
+            # Prioridad 2: Mapeo en REMITENTES_POR_USUARIO
+            elif username_actual in REMITENTES_POR_USUARIO:
+                remitente_corporativo = REMITENTES_POR_USUARIO[username_actual]
+            # Prioridad 3: Generar alias corporativo dinámico basado en el username
+            else:
+                remitente_corporativo = f"{username_actual}@portiumgroup.com"
+        else:
+            remitente_corporativo = "contacto@portiumgroup.com"
+
+        # Limpiar el remitente si viene con formato "Nombre <correo@dominio.com>"
+        correo_salida_limpio = remitente_corporativo
+        if '<' in remitente_corporativo and '>' in remitente_corporativo:
+            correo_salida_limpio = remitente_corporativo.split('<')[1].split('>')[0].strip()
+
+        # 2. Determinar el destinatario principal al que se le responde
+        if correo_original.tipo == 'RECIBIDO':
+            destinatario_principal = correo_original.remitente_correo
+        else:
+            destinatario_principal = correo_original.destinatario
+
+        # 3. Guardar el correo en la base de datos con el usuario y correo activo
         nuevo_correo = CorreoEnviado.objects.create(
-            remitente_usuario=request.user,
-            remitente_correo=request.user.email or "ejecutivo1@portiumgroup.com",
-            destinatario=correo_original.remitente_correo,
-            destinatario_cc=destinatarios_cc,
+            remitente_usuario=request.user if request.user.is_authenticated else None,
+            remitente_correo=correo_salida_limpio,
+            destinatario=destinatario_principal,
+            destinatario_cc=destinatarios_cc_raw,
             asunto=f"RE: {correo_original.asunto.replace('RE: ', '')}",
             mensaje=cuerpo,
             tipo='ENVIADO',
-            message_id=correo_original.message_id  # Mantiene el hilo
+            message_id=correo_original.message_id
         )
 
-        # Manejo de múltiples adjuntos en la respuesta
+        # 4. Guardar archivos adjuntos múltiples
         archivos = request.FILES.getlist('archivo_respuesta')
         for archivo in archivos:
             CorreoAdjunto.objects.create(
@@ -552,7 +579,49 @@ def responder_correo(request, correo_id):
                 nombre_archivo=archivo.name
             )
 
-        messages.success(request, "¡Respuesta enviada exitosamente!")
+        # 5. Enviar el correo mediante Brevo (usando el remitente dinámico)
+        try:
+            configuration = sib_api_v3_sdk.Configuration()
+            configuration.api_key['api-key'] = os.environ.get('BREVO_API_KEY')
+            api_instance = sib_api_v3_sdk.TransactionalEmailsApi(sib_api_v3_sdk.ApiClient(configuration))
 
-        # REDIRECCIONAR A LA BANDEJA PRINCIPAL (Para recargar la vista completa con CSS)
+            to_dest = [{"email": destinatario_principal}]
+
+            # Procesar lista de CC
+            cc_dest = None
+            if destinatarios_cc_raw.strip():
+                lista_cc = [c.strip() for c in destinatarios_cc_raw.replace(';', ',').split(',') if c.strip()]
+                if lista_cc:
+                    cc_dest = [{"email": email_cc} for email_cc in lista_cc]
+
+            # Procesar adjuntos
+            attachments = None
+            if archivos:
+                attachments = []
+                for archivo in archivos:
+                    archivo.seek(0)
+                    contenido_base64 = base64.b64encode(archivo.read()).decode('utf-8')
+                    attachments.append({
+                        "content": contenido_base64,
+                        "name": archivo.name
+                    })
+
+            nombre_remitente = request.user.get_full_name() or request.user.username if request.user.is_authenticated else "Portium Group"
+
+            send_smtp_email = sib_api_v3_sdk.SendSmtpEmail(
+                sender={"name": nombre_remitente, "email": "contacto@portiumgroup.com"},
+                reply_to={"email": correo_salida_limpio, "name": nombre_remitente},
+                to=to_dest,
+                cc=cc_dest,
+                subject=nuevo_correo.asunto,
+                text_content=cuerpo,
+                attachment=attachments
+            )
+            api_instance.send_transac_email(send_smtp_email)
+            messages.success(request, "¡Respuesta enviada exitosamente!")
+        except Exception as e:
+            print(f"Error al enviar correo por Brevo: {e}")
+            messages.warning(request,
+                             f"Respuesta registrada en el panel, pero hubo un inconveniente en la salida del correo: {e}")
+
         return redirect('bandeja_correos')
